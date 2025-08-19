@@ -1,17 +1,8 @@
-interface User {
-  id: number;
-  name: string;
-  email: string;
+async function main() {
+  console.log("Hello, world!");
 }
 
-function greetUser(user: User): string {
-  return `Hello, ${user.name}! Your email is ${user.email}`;
-}
-
-const sampleUser: User = {
-  id: 1,
-  name: "John Doe",
-  email: "john.doe@example.com",
-};
-
-console.log(greetUser(sampleUser));
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
