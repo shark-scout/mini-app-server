@@ -27,7 +27,6 @@ export async function getListOfWalletTransactions(
       },
     }
   );
-  logger.info(JSON.stringify(data));
 
   const transactions: ZerionTransaction[] = data.data;
   return transactions;
