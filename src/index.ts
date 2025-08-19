@@ -7,6 +7,7 @@ async function main() {
   logger.info("Starting script...");
 
   // Sleep for 2 seconds
+  logger.info("Sleeping for 2 seconds...");
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   logger.info("Script finished");
