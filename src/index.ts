@@ -1,8 +1,19 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+import { logger } from "./utils/logger";
+
 async function main() {
-  console.log("Hello, world!");
+  logger.info("Starting script...");
+
+  // Sleep for 2 seconds
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  logger.info("Script finished");
+  process.exit(0);
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error(error);
   process.exit(1);
 });
