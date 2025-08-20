@@ -13,6 +13,18 @@ export type NeynarUser = {
   profile: {
     bio: {
       text: string;
+      mentioned_profiles?: {
+        object: "user_dehydrated";
+        fid: number;
+        username: string;
+        display_name: string;
+        pfp_url: string;
+        custody_address: string;
+      }[];
+      mentioned_profiles_ranges?: {
+        start: number;
+        end: number;
+      }[];
       mentioned_channels?: {
         object: string;
         id: string;
