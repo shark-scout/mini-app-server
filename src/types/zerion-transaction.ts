@@ -16,7 +16,7 @@ type FungibleInfo = {
   id: string;
   name: string;
   symbol: string;
-  icon: Icon;
+  icon: Icon | undefined;
   flags: Flags;
   implementations: Implementation[];
 };

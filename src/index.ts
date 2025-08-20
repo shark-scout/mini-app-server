@@ -14,9 +14,12 @@ async function main() {
   // const minMinedAt = new Date("2025-08-20T00:00:00+03:00").getTime();
   // await createTransactions(addresses, minMinedAt);
 
-  // Load transactions
+  // // Load transactions
   // const transactions = await findTransactions();
   // logger.info(`Loaded ${transactions.length} transactions`);
+
+  // // Create trends
+  // await createTrends(transactions);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");
