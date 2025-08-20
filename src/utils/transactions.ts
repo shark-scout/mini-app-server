@@ -3,11 +3,12 @@ import { insertTransactions } from "../mongodb/services/transactions";
 import { logger } from "./logger";
 import { getListOfWalletTransactions } from "./zerion";
 
+// TODO: Add timeout between sending requests
 export async function createTransactions(
   addresses: string[],
   minMinedAt: number
 ): Promise<void> {
-  logger.info("Creating transactions...");
+  logger.info(`Creating transactions for ${addresses.length} addresses`);
   for (const address of addresses) {
     logger.info(`Creating transactions for address: ${address}`);
     // Get transactions from Zerion API
@@ -21,7 +22,12 @@ export async function createTransactions(
       address: address,
       zerionTransaction: zt,
     }));
+    logger.info(
+      `Created ${transactions.length} transactions for address: ${address}`
+    );
     // Insert transactions into MongoDB
-    await insertTransactions(transactions);
+    if (transactions.length > 0) {
+      await insertTransactions(transactions);
+    }
   }
 }
