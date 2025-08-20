@@ -1,6 +1,6 @@
 import { ZerionTransaction } from "../types/zerion-transaction";
 
-export const demoTransactions: ZerionTransaction[] = [
+export const demoZerionTransactions: ZerionTransaction[] = [
   {
     type: "transactions",
     id: "5c9f9003f43555d686c4ccfb68f07674",

@@ -1,6 +1,6 @@
 import { NeynarUser } from "../types/neynar-user";
 
-export const demoUsers: NeynarUser[] = [
+export const demoFollowingUsers: NeynarUser[] = [
   {
     object: "user",
     fid: 509000,
