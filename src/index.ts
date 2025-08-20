@@ -2,30 +2,26 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { logger } from "./utils/logger";
-import { demoNeynarUsers } from "./demo/neynar-users";
-import { findTransactions } from "./mongodb/services/transactions";
-import { createTrends } from "./utils/trends";
 
 async function main() {
   logger.info("Starting script...");
 
   // Load users
-  const users = demoNeynarUsers;
+  // const users = demoNeynarFollows.map((follow) => follow.user);
 
   // // Create transactions
-  // const addresses = [
-  //   "0x6535c0315b9668a3e38dfcaeee102705d0a74741", // @flynn.eth
-  //   "0xb127a792c83a72e6d961df9e41a5e414e22d80ba", // @runn3rr
-  // ];
-  // const minMinedAt = new Date("2025-08-20T00:00:00+03:00").getTime();
+  // const addresses = users.flatMap(
+  //   (user) => user.verified_addresses.eth_addresses
+  // );
+  // const minMinedAt = new Date("2025-08-19T00:00:00+03:00").getTime();
   // await createTransactions(addresses, minMinedAt);
 
-  // Load transactions
-  const transactions = await findTransactions();
-  logger.info(`Loaded ${transactions.length} transactions`);
+  // // Load transactions
+  // const transactions = await findTransactions();
+  // logger.info(`Loaded ${transactions.length} transactions`);
 
-  // Create trends
-  await createTrends(transactions, users);
+  // // Create trends
+  // await createTrends(transactions, users);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");
