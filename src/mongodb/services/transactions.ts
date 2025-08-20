@@ -5,7 +5,6 @@ import { getCollection } from "./collections";
 
 export async function findTransactions(args?: {
   address?: string;
-  limit?: number;
 }): Promise<Transaction[]> {
   logger.info("Finding transactions...");
   const collection = await getCollection<Transaction>(
@@ -16,7 +15,6 @@ export async function findTransactions(args?: {
       ...(args?.address !== undefined && { address: args.address }),
     })
     .sort({ created: -1 })
-    .limit(args?.limit || mongodbConfig.limit)
     .toArray();
   return transactions;
 }
