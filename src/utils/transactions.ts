@@ -3,14 +3,22 @@ import { insertTransactions } from "../mongodb/services/transactions";
 import { logger } from "./logger";
 import { getListOfWalletTransactions } from "./zerion";
 
-// TODO: Add timeout between sending requests
+// TODO: Handle 500 error
 export async function createTransactions(
   addresses: string[],
   minMinedAt: number
 ): Promise<void> {
   logger.info(`Creating transactions for ${addresses.length} addresses`);
-  for (const address of addresses) {
-    logger.info(`Creating transactions for address: ${address}`);
+  for (let i = 0; i < addresses.length; i++) {
+    const address = addresses[i];
+    if (!address) {
+      continue;
+    }
+    logger.info(
+      `Creating transactions for address: ${address}, ${i + 1}/${
+        addresses.length
+      }`
+    );
     // Get transactions from Zerion API
     const zerionTransactions = await getListOfWalletTransactions(
       address,
@@ -29,5 +37,7 @@ export async function createTransactions(
     if (transactions.length > 0) {
       await insertTransactions(transactions);
     }
+    // Wait to avoid hitting API rate limits
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
 }
