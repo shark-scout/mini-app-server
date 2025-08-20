@@ -21,7 +21,7 @@ export async function createTrends(
   }
 
   // Map to group trends by token address and type (buy/sell)
-  const trendMap = new Map<
+  const trendKeyToDataMap = new Map<
     string,
     {
       type: "buy" | "sell";
@@ -71,7 +71,7 @@ export async function createTrends(
       }-${trendType}`;
 
       // Get or create trend data
-      let trendData = trendMap.get(trendKey);
+      let trendData = trendKeyToDataMap.get(trendKey);
 
       if (!trendData) {
         trendData = {
@@ -87,7 +87,7 @@ export async function createTrends(
           users: [],
           value: 0,
         };
-        trendMap.set(trendKey, trendData);
+        trendKeyToDataMap.set(trendKey, trendData);
       }
 
       // Add transaction info
@@ -108,7 +108,7 @@ export async function createTrends(
 
   // Convert map to Trend objects
   const currentTime = new Date();
-  for (const trendData of trendMap.values()) {
+  for (const trendData of trendKeyToDataMap.values()) {
     const trend = new Trend(
       currentTime,
       trendData.type,
