@@ -2,9 +2,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { logger } from "./utils/logger";
+import { demoNeynarUsers } from "./demo/neynar-users";
+import { findTransactions } from "./mongodb/services/transactions";
+import { createTrends } from "./utils/trends";
 
 async function main() {
   logger.info("Starting script...");
+
+  // Load users
+  const users = demoNeynarUsers;
 
   // // Create transactions
   // const addresses = [
@@ -14,12 +20,12 @@ async function main() {
   // const minMinedAt = new Date("2025-08-20T00:00:00+03:00").getTime();
   // await createTransactions(addresses, minMinedAt);
 
-  // // Load transactions
-  // const transactions = await findTransactions();
-  // logger.info(`Loaded ${transactions.length} transactions`);
+  // Load transactions
+  const transactions = await findTransactions();
+  logger.info(`Loaded ${transactions.length} transactions`);
 
-  // // Create trends
-  // await createTrends(transactions);
+  // Create trends
+  await createTrends(transactions, users);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");

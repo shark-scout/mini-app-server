@@ -15,7 +15,7 @@ export class Trend {
       value: number;
     }[],
     public users: {
-      address: string; // TODO: Replace with fid
+      fid: number;
     }[],
     public value: number,
     public _id?: ObjectId

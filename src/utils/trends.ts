@@ -1,12 +1,24 @@
 import { Transaction } from "../mongodb/models/transaction";
 import { Trend } from "../mongodb/models/trend";
 import { insertTrends } from "../mongodb/services/trends";
+import { NeynarUser } from "../types/neynar-user";
 import { logger } from "./logger";
 
-export async function createTrends(transactions: Transaction[]) {
+export async function createTrends(
+  transactions: Transaction[],
+  users: NeynarUser[]
+) {
   logger.info("Creating trends...");
 
   const trends: Trend[] = [];
+
+  // Create a map from eth addresses to user fids for quick lookup
+  const addressToFidMap = new Map<string, number>();
+  for (const user of users) {
+    for (const ethAddress of user.verified_addresses.eth_addresses) {
+      addressToFidMap.set(ethAddress.toLowerCase(), user.fid);
+    }
+  }
 
   // Map to group trends by token address and type (buy/sell)
   const trendMap = new Map<
@@ -24,7 +36,7 @@ export async function createTrends(transactions: Transaction[]) {
         value: number;
       }[];
       users: {
-        address: string;
+        fid: number;
       }[];
       value: number;
     }
@@ -35,6 +47,13 @@ export async function createTrends(transactions: Transaction[]) {
     const { transfers } = transaction.zerionTransaction.attributes;
     const transactionHash = transaction.zerionTransaction.attributes.hash;
     const userAddress = transaction.address;
+
+    // Find the user fid for this transaction address
+    const userFid = addressToFidMap.get(userAddress.toLowerCase());
+    if (!userFid) {
+      logger.warn(`No user found for address: ${userAddress}`);
+      continue; // Skip transactions for users not in our Neynar user list
+    }
 
     // Process each transfer in the transaction
     for (const transfer of transfers) {
@@ -77,9 +96,9 @@ export async function createTrends(transactions: Transaction[]) {
         value: value,
       });
 
-      // Add user if not already present
-      if (!trendData.users.find((user) => user.address === userAddress)) {
-        trendData.users.push({ address: userAddress });
+      // Add user if not already present (check by fid to prevent duplicates)
+      if (!trendData.users.find((user) => user.fid === userFid)) {
+        trendData.users.push({ fid: userFid });
       }
 
       // Accumulate total value
