@@ -3,14 +3,11 @@ import { ZerionTransaction } from "../types/zerion-transaction";
 import { logger } from "./logger";
 
 export async function getListOfWalletTransactions(
-  address: string
+  address: string,
+  minMinedAt: number
 ): Promise<ZerionTransaction[]> {
   logger.info(`Getting list of wallet transactions...`);
 
-  // Calculate epoch timestamp for one day ago
-  const minMinedAt = Math.floor(Date.now() - 24 * 60 * 60 * 1000).toString();
-
-  // Send request
   const { data } = await axios.get(
     `https://api.zerion.io/v1/wallets/${address}/transactions/` +
       `?currency=usd` +

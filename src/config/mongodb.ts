@@ -3,4 +3,5 @@ export const mongodbConfig = {
   collections: {
     transactions: "transactions",
   },
+  limit: 100,
 };

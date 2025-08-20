@@ -1,23 +1,22 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { Transaction } from "./mongodb/models/transaction";
-import { insertTransactions } from "./mongodb/services/transactions";
 import { logger } from "./utils/logger";
-import { getListOfWalletTransactions } from "./utils/zerion";
 
 async function main() {
   logger.info("Starting script...");
 
-  // Load and save transactions
-  const address = "0x6535c0315b9668a3e38dfcaeee102705d0a74741"; // @flynn.eth
-  const zerionTransactions = await getListOfWalletTransactions(address);
-  const transactions: Transaction[] = zerionTransactions.map((zt) => ({
-    created: new Date(),
-    address: address,
-    zerionTransaction: zt,
-  }));
-  await insertTransactions(transactions);
+  // // Create transactions
+  // const addresses = [
+  //   "0x6535c0315b9668a3e38dfcaeee102705d0a74741", // @flynn.eth
+  //   "0xb127a792c83a72e6d961df9e41a5e414e22d80ba", // @runn3rr
+  // ];
+  // const minMinedAt = new Date("2025-08-20T00:00:00+03:00").getTime();
+  // await createTransactions(addresses, minMinedAt);
+
+  // Load transactions
+  // const transactions = await findTransactions();
+  // logger.info(`Loaded ${transactions.length} transactions`);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");
