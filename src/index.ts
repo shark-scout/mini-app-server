@@ -10,7 +10,7 @@ async function main() {
   logger.info("Starting script...");
 
   // Init data
-  const fid = 1;
+  const fid = 0;
   const members = demoNeynarMembers;
   const users = members.map((member) => member.user);
   const topUsers = users.filter((user) => user.score >= 0.9);
