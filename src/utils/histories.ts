@@ -44,6 +44,6 @@ export async function createHistories(
     };
     await insertHistory(history);
     // Wait to avoid hitting Zerion API rate limits
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 }
