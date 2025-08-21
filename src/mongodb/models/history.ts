@@ -1,11 +1,13 @@
 import { ObjectId } from "mongodb";
 import { ZerionTransaction } from "../../types/zerion-transaction";
 
-export class Transaction {
+export class History {
   constructor(
     public created: Date,
     public address: string,
-    public zerionTransaction: ZerionTransaction,
+    public zerionTransactions: ZerionTransaction[],
+    public minMinedAt: Date,
+    public maxMinedAt: Date,
     public _id?: ObjectId
   ) {}
 }

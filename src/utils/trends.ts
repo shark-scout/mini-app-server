@@ -1,13 +1,10 @@
-import { Transaction } from "../mongodb/models/transaction";
+import { History } from "../mongodb/models/history";
 import { Trend } from "../mongodb/models/trend";
 import { insertTrends } from "../mongodb/services/trends";
 import { NeynarUser } from "../types/neynar-user";
 import { logger } from "./logger";
 
-export async function createTrends(
-  transactions: Transaction[],
-  users: NeynarUser[]
-) {
+export async function createTrends(histories: History[], users: NeynarUser[]) {
   logger.info("Creating trends...");
 
   const trends: Trend[] = [];
@@ -42,67 +39,69 @@ export async function createTrends(
     }
   >();
 
-  // Process each transaction
-  for (const transaction of transactions) {
-    const { transfers } = transaction.zerionTransaction.attributes;
-    const transactionHash = transaction.zerionTransaction.attributes.hash;
-    const userAddress = transaction.address;
+  // Process each transaction in each history
+  for (const history of histories) {
+    for (const zerionTransaction of history.zerionTransactions) {
+      const { transfers } = zerionTransaction.attributes;
+      const transactionHash = zerionTransaction.attributes.hash;
+      const userAddress = history.address;
 
-    // Find the user fid for this transaction address
-    const userFid = addressToFidMap.get(userAddress.toLowerCase());
-    if (!userFid) {
-      logger.warn(`No user found for address: ${userAddress}`);
-      continue; // Skip transactions for users not in our Neynar user list
-    }
-
-    // Process each transfer in the transaction
-    for (const transfer of transfers) {
-      const { direction, fungible_info, value } = transfer;
-
-      // Skip if no fungible info (shouldn't happen but safety check)
-      if (!fungible_info) continue;
-
-      // Determine trend type based on direction
-      const trendType: "buy" | "sell" = direction === "in" ? "buy" : "sell";
-
-      // Create unique key for this token and trend type
-      const trendKey = `${
-        fungible_info.implementations[0]?.address || fungible_info.id
-      }-${trendType}`;
-
-      // Get or create trend data
-      let trendData = trendKeyToDataMap.get(trendKey);
-
-      if (!trendData) {
-        trendData = {
-          type: trendType,
-          token: {
-            address:
-              fungible_info.implementations[0]?.address || fungible_info.id,
-            name: fungible_info.name,
-            symbol: fungible_info.symbol,
-            icon: fungible_info.icon?.url || "",
-          },
-          transactions: [],
-          users: [],
-          value: 0,
-        };
-        trendKeyToDataMap.set(trendKey, trendData);
+      // Find the user fid for this transaction address
+      const userFid = addressToFidMap.get(userAddress.toLowerCase());
+      if (!userFid) {
+        logger.warn(`No user found for address: ${userAddress}`);
+        continue; // Skip transactions for users not in our Neynar user list
       }
 
-      // Add transaction info
-      trendData.transactions.push({
-        hash: transactionHash,
-        value: value,
-      });
+      // Process each transfer in the transaction
+      for (const transfer of transfers) {
+        const { direction, fungible_info, value } = transfer;
 
-      // Add user if not already present (check by fid to prevent duplicates)
-      if (!trendData.users.find((user) => user.fid === userFid)) {
-        trendData.users.push({ fid: userFid });
+        // Skip if no fungible info (shouldn't happen but safety check)
+        if (!fungible_info) continue;
+
+        // Determine trend type based on direction
+        const trendType: "buy" | "sell" = direction === "in" ? "buy" : "sell";
+
+        // Create unique key for this token and trend type
+        const trendKey = `${
+          fungible_info.implementations[0]?.address || fungible_info.id
+        }-${trendType}`;
+
+        // Get or create trend data
+        let trendData = trendKeyToDataMap.get(trendKey);
+
+        if (!trendData) {
+          trendData = {
+            type: trendType,
+            token: {
+              address:
+                fungible_info.implementations[0]?.address || fungible_info.id,
+              name: fungible_info.name,
+              symbol: fungible_info.symbol,
+              icon: fungible_info.icon?.url || "",
+            },
+            transactions: [],
+            users: [],
+            value: 0,
+          };
+          trendKeyToDataMap.set(trendKey, trendData);
+        }
+
+        // Add transaction info
+        trendData.transactions.push({
+          hash: transactionHash,
+          value: value,
+        });
+
+        // Add user if not already present (check by fid to prevent duplicates)
+        if (!trendData.users.find((user) => user.fid === userFid)) {
+          trendData.users.push({ fid: userFid });
+        }
+
+        // Accumulate total value
+        trendData.value += value;
       }
-
-      // Accumulate total value
-      trendData.value += value;
     }
   }
 
@@ -120,9 +119,7 @@ export async function createTrends(
     trends.push(trend);
   }
 
-  logger.info(
-    `Created ${trends.length} trends from ${transactions.length} transactions`
-  );
+  logger.info(`Created ${trends.length} trends`);
 
   // Insert trends into MongoDB
   await insertTrends(trends);

@@ -4,7 +4,8 @@ import { logger } from "./logger";
 
 export async function getListOfWalletTransactions(
   address: string,
-  minMinedAt: number
+  minMinedAt: number,
+  maxMinedAt: number
 ): Promise<ZerionTransaction[]> {
   logger.info(`Getting list of wallet transactions...`);
 
@@ -16,6 +17,7 @@ export async function getListOfWalletTransactions(
       `&filter[asset_types]=fungible` +
       `&filter[chain_ids]=base` +
       `&filter[min_mined_at]=${minMinedAt}` +
+      `&filter[max_mined_at]=${maxMinedAt}` +
       `&filter[trash]=no_filter`,
     {
       headers: {

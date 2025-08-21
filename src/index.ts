@@ -1,27 +1,33 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { demoNeynarUsers } from "./demo/neynar-users";
 import { logger } from "./utils/logger";
+import { createTrends } from "./utils/trends";
+import { findHistories } from "./mongodb/services/histories";
 
 async function main() {
   logger.info("Starting script...");
 
   // Load users
   // const users = demoNeynarFollows.map((follow) => follow.user);
+  const users = demoNeynarUsers;
 
-  // // Create transactions
+  // Create histories
   // const addresses = users.flatMap(
   //   (user) => user.verified_addresses.eth_addresses
   // );
-  // const minMinedAt = new Date("2025-08-19T00:00:00+03:00").getTime();
-  // await createTransactions(addresses, minMinedAt);
+  // const minMinedAt = new Date("2025-08-19T00:00:00+03:00");
+  // const maxMinedAt = new Date("2025-08-21T00:00:00+03:00");
+  // await createHistories(addresses, minMinedAt, maxMinedAt);
 
-  // // Load transactions
-  // const transactions = await findTransactions();
-  // logger.info(`Loaded ${transactions.length} transactions`);
+  // Load histories
+  // TODO: Find by minMinedAt and maxMinedAt
+  const histories = await findHistories({});
+  logger.info(`Loaded ${histories.length} histories`);
 
   // // Create trends
-  // await createTrends(transactions, users);
+  await createTrends(histories, users);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");

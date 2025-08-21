@@ -1,7 +1,7 @@
 export const mongodbConfig = {
   database: "shark_scout",
   collections: {
-    transactions: "transactions",
+    histories: "histories",
     trends: "trends",
   },
   limit: 100,
