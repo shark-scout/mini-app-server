@@ -80,6 +80,7 @@ export async function createDashboard(
 
         // Add transaction info
         trend.transactions.push({
+          address: history.address,
           hash: transactionHash,
           value: value,
         });
@@ -90,6 +91,7 @@ export async function createDashboard(
             fid: user.fid,
             username: user.username,
             pfp_url: user.pfp_url,
+            addresses: user.verified_addresses.eth_addresses,
           });
         }
 

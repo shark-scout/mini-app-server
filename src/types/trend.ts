@@ -6,8 +6,8 @@ export type Trend = {
     symbol: string;
     icon: string;
   };
-  // TODO: Add address
   transactions: {
+    address: string; // User's address
     hash: string;
     value: number;
   }[];
@@ -15,6 +15,7 @@ export type Trend = {
     fid: number;
     username: string;
     pfp_url: string;
+    addresses: string[];
   }[];
   value: number;
 };
