@@ -1,9 +1,8 @@
 import { History } from "../mongodb/models/history";
-import { insertHistory } from "../mongodb/services/histories";
+import { findHistories, insertHistory } from "../mongodb/services/histories";
 import { logger } from "./logger";
 import { getListOfWalletTransactions } from "./zerion";
 
-// TODO: Don't create history if already exist (find history by address, dates)
 export async function createHistories(
   addresses: string[],
   minMinedAt: Date,
@@ -18,6 +17,12 @@ export async function createHistories(
     logger.info(
       `Creating history for address: ${address}, ${i + 1}/${addresses.length}`
     );
+    // Check if history already exists
+    const histories = await findHistories({ address, minMinedAt, maxMinedAt });
+    if (histories.length !== 0) {
+      logger.info("History already exists");
+      continue;
+    }
     // Get transactions from Zerion API
     const zerionTransactions = await getListOfWalletTransactions(
       address,
