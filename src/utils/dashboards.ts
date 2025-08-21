@@ -12,6 +12,12 @@ export async function createDashboard(
 ) {
   logger.info(`[Utils] Creating dashboard for FID: ${fid}`);
 
+  // Check if there are any histories to process
+  if (histories.length === 0) {
+    logger.warn(`[Utils] No histories for creating dashboard`);
+    return;
+  }
+
   // Create a map to group users by their eth addresses
   const addressToUserMap = new Map<string, NeynarUser>();
   for (const user of users) {
