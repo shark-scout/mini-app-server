@@ -6,6 +6,7 @@ export type Trend = {
     symbol: string;
     icon: string;
   };
+  // TODO: Add address
   transactions: {
     hash: string;
     value: number;
