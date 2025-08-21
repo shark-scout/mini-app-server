@@ -5,6 +5,7 @@ import { getCollection } from "./collections";
 
 export async function findHistories(args?: {
   address?: string;
+  addresses?: string[];
   minMinedAt?: Date;
   maxMinedAt?: Date;
 }): Promise<History[]> {
@@ -15,6 +16,9 @@ export async function findHistories(args?: {
   const histories = await collection
     .find({
       ...(args?.address !== undefined && { address: args.address }),
+      ...(args?.addresses !== undefined && {
+        address: { $in: args.addresses },
+      }),
       ...(args?.minMinedAt !== undefined && { minMinedAt: args.minMinedAt }),
       ...(args?.maxMinedAt !== undefined && { maxMinedAt: args.maxMinedAt }),
     })
