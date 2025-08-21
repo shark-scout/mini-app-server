@@ -10,7 +10,7 @@ export async function createDashboard(
   histories: History[],
   users: NeynarUser[]
 ) {
-  logger.info(`Creating dashboard for FID: ${fid}`);
+  logger.info(`[Utils] Creating dashboard for FID: ${fid}`);
 
   // Create a map to group users by their eth addresses
   const addressToUserMap = new Map<string, NeynarUser>();
@@ -33,7 +33,7 @@ export async function createDashboard(
       // Find the user for this transaction address
       const user = addressToUserMap.get(userAddress.toLowerCase());
       if (!user) {
-        logger.warn(`No user found for address: ${userAddress}`);
+        logger.warn(`[Utils] No user found for address: ${userAddress}`);
         continue; // Skip transactions for users not in our user list
       }
 

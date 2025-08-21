@@ -7,7 +7,7 @@ export async function getListOfWalletTransactions(
   minMinedAt: number,
   maxMinedAt: number
 ): Promise<ZerionTransaction[]> {
-  logger.info(`Getting list of wallet transactions...`);
+  logger.info(`[Utils] Getting list of wallet transactions...`);
 
   const { data } = await axios.get(
     `https://api.zerion.io/v1/wallets/${address}/transactions/` +

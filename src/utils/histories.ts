@@ -8,19 +8,21 @@ export async function createHistories(
   minMinedAt: Date,
   maxMinedAt: Date
 ): Promise<void> {
-  logger.info(`Creating histories for ${addresses.length} addresses`);
+  logger.info(`[Utils] Creating histories for ${addresses.length} addresses`);
   for (let i = 0; i < addresses.length; i++) {
     const address = addresses[i];
     if (!address) {
       continue;
     }
     logger.info(
-      `Creating history for address: ${address}, ${i + 1}/${addresses.length}`
+      `[Utils] Creating history for address: ${address}, ${i + 1}/${
+        addresses.length
+      }`
     );
     // Check if history already exists
     const histories = await findHistories({ address, minMinedAt, maxMinedAt });
     if (histories.length !== 0) {
-      logger.info("History already exists");
+      logger.info("[Utils] History already exists");
       continue;
     }
     // Get transactions from Zerion API
@@ -30,7 +32,7 @@ export async function createHistories(
       maxMinedAt.getTime()
     );
     logger.info(
-      `Retrieved ${zerionTransactions.length} transactions from Zerion API`
+      `[Utils] Retrieved ${zerionTransactions.length} transactions from Zerion API`
     );
     // Insert history into MongoDB
     const history: History = {
