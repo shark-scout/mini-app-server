@@ -12,15 +12,15 @@ export async function createDashboard(
 ) {
   logger.info(`Creating dashboard for FID: ${fid}`);
 
-  // Create a map from eth addresses to user fids for quick lookup
-  const addressToFidMap = new Map<string, number>();
+  // Create a map to group users by their eth addresses
+  const addressToUserMap = new Map<string, NeynarUser>();
   for (const user of users) {
     for (const ethAddress of user.verified_addresses.eth_addresses) {
-      addressToFidMap.set(ethAddress.toLowerCase(), user.fid);
+      addressToUserMap.set(ethAddress.toLowerCase(), user);
     }
   }
 
-  // Map to group trends by token address and type (buy/sell)
+  // Create a map to group trends by token address and type (buy/sell)
   const trendKeyToTrendMap = new Map<string, Trend>();
 
   // Process each transaction in each history
@@ -30,9 +30,9 @@ export async function createDashboard(
       const transactionHash = zerionTransaction.attributes.hash;
       const userAddress = history.address;
 
-      // Find the user fid for this transaction address
-      const userFid = addressToFidMap.get(userAddress.toLowerCase());
-      if (!userFid) {
+      // Find the user for this transaction address
+      const user = addressToUserMap.get(userAddress.toLowerCase());
+      if (!user) {
         logger.warn(`No user found for address: ${userAddress}`);
         continue; // Skip transactions for users not in our user list
       }
@@ -78,9 +78,13 @@ export async function createDashboard(
           value: value,
         });
 
-        // Add user if not already present (check by fid to prevent duplicates)
-        if (!trend.users.find((user) => user.fid === userFid)) {
-          trend.users.push({ fid: userFid });
+        // Add user if not already present (check by FID to prevent duplicates)
+        if (!trend.users.find((u) => u.fid === user.fid)) {
+          trend.users.push({
+            fid: user.fid,
+            username: user.username,
+            pfp_url: user.pfp_url,
+          });
         }
 
         // Accumulate total value
