@@ -2,12 +2,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { demoNeynarUsers } from "./demo/neynar-users";
-import { logger } from "./utils/logger";
-import { createTrends } from "./utils/trends";
 import { findHistories } from "./mongodb/services/histories";
+import { logger } from "./utils/logger";
+import { createDashboard } from "./utils/dashboards";
 
 async function main() {
   logger.info("Starting script...");
+
+  // Init FID
+  const fid = 1;
 
   // Load users
   // const users = demoNeynarFollows.map((follow) => follow.user);
@@ -26,8 +29,8 @@ async function main() {
   const histories = await findHistories({});
   logger.info(`Loaded ${histories.length} histories`);
 
-  // // Create trends
-  await createTrends(histories, users);
+  // Create dashboard
+  await createDashboard(fid, histories, users);
 
   // Wait for 2 seconds to make sure the logs are saved
   logger.info("Waiting for 2 seconds...");

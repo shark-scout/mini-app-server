@@ -1,13 +1,16 @@
+import { Dashboard } from "../mongodb/models/dashboard";
 import { History } from "../mongodb/models/history";
-import { Trend } from "../mongodb/models/trend";
-import { insertTrends } from "../mongodb/services/trends";
+import { insertDashboard } from "../mongodb/services/dashboards";
 import { NeynarUser } from "../types/neynar-user";
+import { Trend } from "../types/trend";
 import { logger } from "./logger";
 
-export async function createTrends(histories: History[], users: NeynarUser[]) {
-  logger.info("Creating trends...");
-
-  const trends: Trend[] = [];
+export async function createDashboard(
+  fid: number,
+  histories: History[],
+  users: NeynarUser[]
+) {
+  logger.info(`Creating dashboard for FID: ${fid}`);
 
   // Create a map from eth addresses to user fids for quick lookup
   const addressToFidMap = new Map<string, number>();
@@ -18,26 +21,7 @@ export async function createTrends(histories: History[], users: NeynarUser[]) {
   }
 
   // Map to group trends by token address and type (buy/sell)
-  const trendKeyToDataMap = new Map<
-    string,
-    {
-      type: "buy" | "sell";
-      token: {
-        address: string;
-        name: string;
-        symbol: string;
-        icon: string;
-      };
-      transactions: {
-        hash: string;
-        value: number;
-      }[];
-      users: {
-        fid: number;
-      }[];
-      value: number;
-    }
-  >();
+  const trendKeyToTrendMap = new Map<string, Trend>();
 
   // Process each transaction in each history
   for (const history of histories) {
@@ -50,7 +34,7 @@ export async function createTrends(histories: History[], users: NeynarUser[]) {
       const userFid = addressToFidMap.get(userAddress.toLowerCase());
       if (!userFid) {
         logger.warn(`No user found for address: ${userAddress}`);
-        continue; // Skip transactions for users not in our Neynar user list
+        continue; // Skip transactions for users not in our user list
       }
 
       // Process each transfer in the transaction
@@ -68,11 +52,11 @@ export async function createTrends(histories: History[], users: NeynarUser[]) {
           fungible_info.implementations[0]?.address || fungible_info.id
         }-${trendType}`;
 
-        // Get or create trend data
-        let trendData = trendKeyToDataMap.get(trendKey);
+        // Get or create trend
+        let trend = trendKeyToTrendMap.get(trendKey);
 
-        if (!trendData) {
-          trendData = {
+        if (!trend) {
+          trend = {
             type: trendType,
             token: {
               address:
@@ -85,42 +69,37 @@ export async function createTrends(histories: History[], users: NeynarUser[]) {
             users: [],
             value: 0,
           };
-          trendKeyToDataMap.set(trendKey, trendData);
+          trendKeyToTrendMap.set(trendKey, trend);
         }
 
         // Add transaction info
-        trendData.transactions.push({
+        trend.transactions.push({
           hash: transactionHash,
           value: value,
         });
 
         // Add user if not already present (check by fid to prevent duplicates)
-        if (!trendData.users.find((user) => user.fid === userFid)) {
-          trendData.users.push({ fid: userFid });
+        if (!trend.users.find((user) => user.fid === userFid)) {
+          trend.users.push({ fid: userFid });
         }
 
         // Accumulate total value
-        trendData.value += value;
+        trend.value += value;
       }
     }
   }
 
-  // Convert map to Trend objects
-  const currentTime = new Date();
-  for (const trendData of trendKeyToDataMap.values()) {
-    const trend = new Trend(
-      currentTime,
-      trendData.type,
-      trendData.token,
-      trendData.transactions,
-      trendData.users,
-      trendData.value
-    );
+  // Convert map to array
+  const trends: Trend[] = [];
+  for (const trend of trendKeyToTrendMap.values()) {
     trends.push(trend);
   }
 
-  logger.info(`Created ${trends.length} trends`);
-
-  // Insert trends into MongoDB
-  await insertTrends(trends);
+  // Insert dashboard into MongoDB
+  const dashboard: Dashboard = {
+    created: new Date(),
+    fid,
+    trends,
+  };
+  await insertDashboard(dashboard);
 }
