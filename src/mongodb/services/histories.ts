@@ -5,14 +5,18 @@ import { getCollection } from "./collections";
 
 export async function findHistories(args?: {
   address?: string;
+  minMinedAt?: Date;
+  maxMinedAt?: Date;
 }): Promise<History[]> {
-  logger.info("Finding histories...");
+  logger.info("[MongoDB] Finding histories...");
   const collection = await getCollection<History>(
     mongodbConfig.collections.histories
   );
   const histories = await collection
     .find({
       ...(args?.address !== undefined && { address: args.address }),
+      ...(args?.minMinedAt !== undefined && { minMinedAt: args.minMinedAt }),
+      ...(args?.maxMinedAt !== undefined && { maxMinedAt: args.maxMinedAt }),
     })
     .sort({ created: -1 })
     .toArray();
@@ -20,7 +24,7 @@ export async function findHistories(args?: {
 }
 
 export async function insertHistory(history: History): Promise<void> {
-  logger.info("Inserting history...");
+  logger.info("[MongoDB] Inserting history...");
   const collection = await getCollection<History>(
     mongodbConfig.collections.histories
   );
