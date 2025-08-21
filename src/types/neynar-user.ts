@@ -42,7 +42,7 @@ export type NeynarUser = {
     location?: {
       latitude: number;
       longitude: number;
-      address: {
+      address?: {
         city: string;
         state?: string;
         state_code?: string;
