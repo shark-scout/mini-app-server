@@ -6,7 +6,7 @@ export type NeynarUser = {
   pfp_url: string;
   custody_address: string;
   pro?: {
-    status: "subscribed";
+    status: "subscribed" | "unsubscribed";
     subscribed_at: string;
     expires_at: string;
   };

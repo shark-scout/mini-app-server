@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { demoNeynarFollowsTwo } from "./demo/neynar-follows-two";
+import { demoNeynarMembers } from "./demo/neynar-members";
 import { findHistories } from "./mongodb/services/histories";
 import { createDashboard } from "./utils/dashboards";
 import { logger } from "./utils/logger";
@@ -11,8 +11,8 @@ async function main() {
 
   // Init data
   const fid = 1;
-  const follows = demoNeynarFollowsTwo;
-  const users = follows.map((follow) => follow.user);
+  const members = demoNeynarMembers;
+  const users = members.map((member) => member.user);
   const topUsers = users.filter((user) => user.score >= 0.9);
   const topUserAddresses = topUsers.flatMap(
     (user) => user.verified_addresses.eth_addresses
@@ -25,7 +25,7 @@ async function main() {
   logger.info(`Top user addresses: ${topUserAddresses.length}`);
 
   // // Create histories
-  // await createHistories(addresses, minMinedAt, maxMinedAt);
+  // await createHistories(topUserAddresses, minMinedAt, maxMinedAt);
 
   // Load histories
   const histories = await findHistories({
