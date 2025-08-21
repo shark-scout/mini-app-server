@@ -1,6 +1,6 @@
 import { NeynarFollow } from "../types/neynar-follow";
 
-export const demoNeynarFollows: NeynarFollow[] = [
+export const demoNeynarFollowsTwo: NeynarFollow[] = [
   {
     object: "follow",
     app: { fid: "9152" },

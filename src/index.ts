@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { demoNeynarUsers } from "./demo/neynar-users";
+import { demoNeynarFollowsOne } from "./demo/neynar-follows-one";
 import { findHistories } from "./mongodb/services/histories";
 import { logger } from "./utils/logger";
 import { createDashboard } from "./utils/dashboards";
@@ -9,12 +9,10 @@ import { createDashboard } from "./utils/dashboards";
 async function main() {
   logger.info("Starting script...");
 
-  // Init FID
+  // Init data
   const fid = 1;
-
-  // Load users
-  // const users = demoNeynarFollows.map((follow) => follow.user);
-  const users = demoNeynarUsers;
+  const follows = demoNeynarFollowsOne;
+  const users = follows.map((follow) => follow.user);
 
   // Create histories
   // const addresses = users.flatMap(
