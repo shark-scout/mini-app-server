@@ -104,6 +104,7 @@ export async function createDashboard(
   for (const trend of trendKeyToTrendMap.values()) {
     trends.push(trend);
   }
+  logger.info(`[Utils] Created ${trends.length} trends for dashboard`);
 
   // Insert dashboard into MongoDB
   const dashboard: Dashboard = {
