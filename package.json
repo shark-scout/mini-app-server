@@ -4,16 +4,20 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "dev:watch": "nodemon --exec ts-node src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
+    "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@types/express": "^5.0.3",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "mongodb": "^6.18.0",
     "winston": "^3.17.0"
   }
