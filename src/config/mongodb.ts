@@ -3,6 +3,7 @@ export const mongodbConfig = {
   collections: {
     histories: "histories",
     dashboards: "dashboards",
+    balances: "balances",
   },
   limit: 100,
 };
