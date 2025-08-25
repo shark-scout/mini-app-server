@@ -1,5 +1,5 @@
 {
-  "name": "playground",
+  "name": "mini-app-server",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc",

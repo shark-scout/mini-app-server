@@ -1,4 +1,4 @@
-# SharkScout - Playground
+# SharkScout - Mini App Server
 
 ## Commands
 
