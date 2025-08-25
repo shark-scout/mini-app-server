@@ -38,3 +38,73 @@ export async function createBalances(addresses: string[]): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 }
+
+export function getBalancesUsdValue(balances: Balance[]): number {
+  logger.info(
+    `[Balances] Calculating USD value for ${balances.length} balances`
+  );
+  let balancesUsdValue = 0;
+  for (const balance of balances) {
+    logger.info(
+      `[Balances] Calculating USD value for address: ${balance.address}, Tokens: ${balance.alchemyTokens.length}`
+    );
+    let tokensUsdValue = 0;
+    for (const token of balance.alchemyTokens) {
+      // Find USD price for the token
+      const usdPrice = token.tokenPrices.find(
+        (price) => price.currency === "usd"
+      );
+
+      if (!usdPrice) {
+        continue;
+      }
+
+      // Convert hex tokenBalance to decimal
+      const tokenBalanceHex = token.tokenBalance;
+      const tokenBalanceDecimal = BigInt(tokenBalanceHex);
+
+      // Get token decimals from tokenMetadata
+      let decimals = token.tokenMetadata.decimals;
+
+      // If tokenAddress is null, it's ETH with 18 decimals
+      if (token.tokenAddress === null) {
+        decimals = 18;
+      }
+
+      // Skip tokens without decimal information as we can't calculate accurate balance
+      if (decimals === null || decimals === undefined) {
+        continue;
+      }
+
+      // Calculate actual token amount
+      const divisor = BigInt(10 ** decimals);
+      const actualTokenAmount = Number(tokenBalanceDecimal) / Number(divisor);
+
+      // Calculate USD value
+      const tokenPriceValue = parseFloat(usdPrice.value);
+      const tokenUsdValue = actualTokenAmount * tokenPriceValue;
+
+      // Add to result
+      tokensUsdValue += tokenUsdValue;
+
+      logger.info(
+        `[Balances] Token: ${
+          token.tokenMetadata.symbol || "Unknown"
+        }, Balance: ${actualTokenAmount}, Price: $${tokenPriceValue}, Value: $${tokenUsdValue.toFixed(
+          2
+        )}`
+      );
+    }
+
+    logger.info(
+      `[Balances] USD value for address ${
+        balance.address
+      }: $${tokensUsdValue.toFixed(2)}`
+    );
+
+    // Add to total USD value for balances
+    balancesUsdValue += tokensUsdValue;
+  }
+
+  return balancesUsdValue;
+}
