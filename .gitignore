@@ -72,4 +72,4 @@ tmp/
 temp/
 
 # Requests
-requests.http
+*.http
