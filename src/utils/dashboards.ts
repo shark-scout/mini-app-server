@@ -10,11 +10,11 @@ export async function createDashboard(
   histories: History[],
   users: NeynarUser[]
 ) {
-  logger.info(`[Utils] Creating dashboard for FID: ${fid}`);
+  logger.info(`[Dashboards] Creating dashboard for FID: ${fid}`);
 
   // Check if there are any histories to process
   if (histories.length === 0) {
-    logger.warn(`[Utils] No histories for creating dashboard`);
+    logger.warn(`[Dashboards] No histories for creating dashboard`);
     return;
   }
 
@@ -39,7 +39,7 @@ export async function createDashboard(
       // Find the user for this transaction address
       const user = addressToUserMap.get(userAddress.toLowerCase());
       if (!user) {
-        logger.warn(`[Utils] No user found for address: ${userAddress}`);
+        logger.warn(`[Dashboards] No user found for address: ${userAddress}`);
         continue; // Skip transactions for users not in our user list
       }
 
@@ -106,7 +106,7 @@ export async function createDashboard(
   for (const trend of trendKeyToTrendMap.values()) {
     trends.push(trend);
   }
-  logger.info(`[Utils] Created ${trends.length} trends for dashboard`);
+  logger.info(`[Dashboards] Created ${trends.length} trends for dashboard`);
 
   // Insert dashboard into MongoDB
   const dashboard: Dashboard = {

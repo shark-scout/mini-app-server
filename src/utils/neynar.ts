@@ -3,6 +3,6 @@ import { logger } from "./logger";
 
 // TODO: Implement
 export async function fetchUserFollowing(fid: number): Promise<NeynarUser[]> {
-  logger.info(`[Utils] Fetching following for user ${fid}`);
+  logger.info(`[Neynar] Fetching following for user ${fid}`);
   return [];
 }
