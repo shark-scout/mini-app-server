@@ -1,21 +1,21 @@
-interface TokenMetadata {
+type TokenMetadata = {
   symbol: string | null;
   decimals: number | null;
   name: string | null;
   logo: string | null;
-}
+};
 
-interface TokenPrice {
+type TokenPrice = {
   currency: string;
   value: string;
   lastUpdatedAt: string;
-}
+};
 
-export interface AlchemyToken {
+export type AlchemyToken = {
   address: string;
   network: string;
   tokenAddress: string | null;
   tokenBalance: string;
   tokenMetadata: TokenMetadata;
   tokenPrices: TokenPrice[];
-}
+};
