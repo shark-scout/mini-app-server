@@ -1,7 +1,55 @@
 import { Balance } from "../mongodb/models/balance";
 import { findBalances, insertBalance } from "../mongodb/services/balances";
-import { getTokensByWallet } from "./alchemy";
+import { AlchemyToken } from "../types/alchemy-token";
+import { getTokensByWallet, getTokenUsdValue } from "./alchemy";
 import { logger } from "./logger";
+
+async function createBalance(address: string): Promise<void> {
+  logger.info(`[Balances] Creating balance for address: ${address}`);
+
+  // Check if balance already exists
+  const balances = await findBalances({ address });
+  if (balances.length !== 0) {
+    logger.info("[Balances] Balance already exists");
+    return;
+  }
+
+  // Get tokens from Alchemy API
+  let iterationPageKey: string | undefined = undefined;
+  let totalTokens: AlchemyToken[] = [];
+
+  do {
+    const { tokens, pageKey } = await getTokensByWallet(
+      address,
+      iterationPageKey
+    );
+
+    // Add tokens to the total collection
+    totalTokens = totalTokens.concat(tokens);
+
+    // Update page key for next iteration
+    iterationPageKey = pageKey;
+
+    // Wait to avoid hitting Alchemy API rate limits
+    await new Promise((resolve) => setTimeout(resolve, 500)); // TODO: Adjust delay for production use
+
+    logger.info(
+      `[Balances] Retrieved ${tokens.length} tokens from Alchemy API. Total: ${totalTokens.length}`
+    );
+  } while (iterationPageKey);
+
+  logger.info(
+    `[Balances] Retrieved total ${totalTokens.length} tokens from Alchemy API`
+  );
+
+  // Insert balance into MongoDB
+  const balance: Balance = {
+    createdAt: new Date(),
+    address: address,
+    alchemyTokens: totalTokens,
+  };
+  await insertBalance(balance);
+}
 
 export async function createBalances(addresses: string[]): Promise<void> {
   logger.info(`[Balances] Creating balances for ${addresses.length} addresses`);
@@ -10,99 +58,33 @@ export async function createBalances(addresses: string[]): Promise<void> {
     if (!address) {
       continue;
     }
-    logger.info(
-      `[Balances] Creating balance for address: ${address}, ${i + 1}/${
-        addresses.length
-      }`
-    );
-    // Check if balance already exists
-    const balances = await findBalances({ address });
-    if (balances.length !== 0) {
-      logger.info("[Balances] Balance already exists");
-      continue;
-    }
-    // Get tokens from Alchemy API
-    // TODO: Load tokens from the next page if there are more than 100 tokens
-    const alchemyTokens = await getTokensByWallet(address);
-    logger.info(
-      `[Balances] Retrieved ${alchemyTokens.length} tokens from Alchemy API`
-    );
-    // Insert balance into MongoDB
-    const balance: Balance = {
-      createdAt: new Date(),
-      address: address,
-      alchemyTokens: alchemyTokens,
-    };
-    await insertBalance(balance);
-    // Wait to avoid hitting Alchemy API rate limits
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await createBalance(address);
   }
 }
 
 export function getBalancesUsdValue(balances: Balance[]): number {
-  logger.info(
-    `[Balances] Calculating USD value for ${balances.length} balances`
-  );
+  logger.info(`[Balances] Getting USD value for ${balances.length} balances`);
   let balancesUsdValue = 0;
+  // Iterate each balance
   for (const balance of balances) {
     logger.info(
-      `[Balances] Calculating USD value for address: ${balance.address}, Tokens: ${balance.alchemyTokens.length}`
+      `[Balances] Getting USD value for address: ${balance.address}. Tokens: ${balance.alchemyTokens.length}`
     );
     let tokensUsdValue = 0;
+    // Iterate each token in the balance
     for (const token of balance.alchemyTokens) {
-      // Find USD price for the token
-      const usdPrice = token.tokenPrices.find(
-        (price) => price.currency === "usd"
-      );
-
-      if (!usdPrice) {
-        continue;
+      const tokenUsdValue = getTokenUsdValue(token);
+      if (tokenUsdValue) {
+        tokensUsdValue += tokenUsdValue;
       }
-
-      // Convert hex tokenBalance to decimal
-      const tokenBalanceHex = token.tokenBalance;
-      const tokenBalanceDecimal = BigInt(tokenBalanceHex);
-
-      // Get token decimals from tokenMetadata
-      let decimals = token.tokenMetadata.decimals;
-
-      // If tokenAddress is null, it's ETH with 18 decimals
-      if (token.tokenAddress === null) {
-        decimals = 18;
-      }
-
-      // Skip tokens without decimal information as we can't calculate accurate balance
-      if (decimals === null || decimals === undefined) {
-        continue;
-      }
-
-      // Calculate actual token amount
-      const divisor = BigInt(10 ** decimals);
-      const actualTokenAmount = Number(tokenBalanceDecimal) / Number(divisor);
-
-      // Calculate USD value
-      const tokenPriceValue = parseFloat(usdPrice.value);
-      const tokenUsdValue = actualTokenAmount * tokenPriceValue;
-
-      // Add to result
-      tokensUsdValue += tokenUsdValue;
-
-      logger.info(
-        `[Balances] Token: ${
-          token.tokenMetadata.symbol || "Unknown"
-        }, Balance: ${actualTokenAmount}, Price: $${tokenPriceValue}, Value: $${tokenUsdValue.toFixed(
-          2
-        )}`
-      );
     }
-
     logger.info(
       `[Balances] USD value for address ${
         balance.address
       }: $${tokensUsdValue.toFixed(2)}`
     );
 
-    // Add to total USD value for balances
+    // Add to USD value for balances
     balancesUsdValue += tokensUsdValue;
   }
 
