@@ -13,11 +13,7 @@ app.use(express.json());
 
 // API endpoint to check server health
 app.get("/health", (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  });
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // API endpoint to start a task
@@ -26,24 +22,24 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
     const { fid } = req.body;
 
     if (typeof fid !== "number") {
-      return res.status(400).json({
-        error: "Invalid request",
-        message: "fid must be a number",
-      });
+      return res.status(400).json({ message: "fid must be a number" });
     }
 
     logger.info(`[API] Starting task for FID: ${fid}`);
 
     // Add task to queue
-    await queue.addTask(fid);
+    const { existing } = await queue.addTask(fid);
 
-    return res.json({ success: true });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ message: `Task for FID ${fid} already exists` });
+    }
+
+    return res.json({});
   } catch (error) {
     logger.error("[API] Error starting task:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      message: "Failed to start task",
-    });
+    return res.status(500).json({ message: "Failed to start task" });
   }
 });
 
@@ -53,36 +49,26 @@ app.get("/api/tasks/:fid", async (req: Request, res: Response) => {
     const { fid } = req.params;
 
     if (!fid) {
-      return res.status(400).json({
-        error: "Invalid request",
-        message: "fid parameter is required",
-      });
+      return res.status(400).json({ message: "fid parameter is required" });
     }
 
     const fidInt = parseInt(fid);
     if (isNaN(fidInt)) {
-      return res.status(400).json({
-        error: "Invalid request",
-        message: "fid must be a number",
-      });
+      return res.status(400).json({ message: "fid must be a number" });
     }
 
     const task = await queue.getTask(fidInt);
 
     if (!task) {
-      return res.status(404).json({
-        error: "Task not found",
-        message: `Task with FID ${fidInt} does not exist`,
-      });
+      return res
+        .status(404)
+        .json({ message: `Task with FID ${fidInt} does not exist` });
     }
 
-    return res.json({ success: true, task: task });
+    return res.json({ task: task });
   } catch (error) {
     logger.error("[API] Error getting task:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      message: "Failed to get task",
-    });
+    return res.status(500).json({ message: "Failed to get task" });
   }
 });
 

@@ -69,13 +69,20 @@ export class Queue {
   /**
    * Add a new task to the queue
    */
-  // TODO: Don't add task if already exists for the same fid
-  async addTask(fid: number): Promise<Task> {
+  async addTask(fid: number): Promise<{ task: Task; existing: boolean }> {
     // Initialize if not already done
     if (!this.initialized) {
       await this.initialize();
     }
 
+    // Check if task already exists for this FID
+    const existingTask = await this.getTask(fid);
+    if (existingTask) {
+      logger.info(`[Queue] Task for FID ${fid} already exists`);
+      return { task: existingTask, existing: true };
+    }
+
+    // Create new task
     const task: Task = {
       fid,
       status: TaskStatus.PENDING,
@@ -97,7 +104,7 @@ export class Queue {
       setImmediate(() => this.processNext());
     }
 
-    return task;
+    return { task, existing: false };
   }
 
   /**
@@ -137,9 +144,7 @@ export class Queue {
     this.currentTask = this.queue.shift()!;
 
     logger.info(
-      `[Queue] Starting task ${this.currentTask._id!.toString()} for FID: ${
-        this.currentTask.fid
-      }`
+      `[Queue] Starting task ${this.currentTask._id} for FID: ${this.currentTask.fid}`
     );
 
     // Update task status
@@ -158,15 +163,13 @@ export class Queue {
             this.currentTask.progress = progress;
 
             logger.info(
-              `[Queue] Task ${this.currentTask._id!.toString()} progress: ${
-                progress.message
-              } (${progress.completedSteps}/${progress.totalSteps})`
+              `[Queue] Task ${this.currentTask._id} progress: ${progress.message} (${progress.completedSteps}/${progress.totalSteps})`
             );
 
             // Save progress updates to MongoDB (async, but don't wait)
             upsertTask(this.currentTask).catch((error) => {
               logger.error(
-                `[Queue] Failed to save progress for task ${this.currentTask?._id!.toString()}:`,
+                `[Queue] Failed to save progress for task ${this.currentTask?._id}:`,
                 error
               );
             });
