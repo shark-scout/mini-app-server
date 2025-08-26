@@ -5,15 +5,14 @@ import { TaskProgress, TaskStatus } from "../types/task";
 import { logger } from "./logger";
 import { processTaskWithProgress } from "./tasks";
 
-// TODO: Rename to queue.ts
-export class TaskQueue {
+export class Queue {
   private queue: Task[] = [];
   private processing = false;
   private currentTask: Task | null = null;
   private initialized = false;
 
   /**
-   * Initialize the task queue by recovering incomplete tasks from MongoDB
+   * Initialize the queue by recovering incomplete tasks from MongoDB
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -22,7 +21,7 @@ export class TaskQueue {
 
     try {
       logger.info(
-        "[TaskQueue] Initializing task queue and recovering incomplete tasks..."
+        "[Queue] Initializing task queue and recovering incomplete tasks..."
       );
 
       // Get incomplete tasks from MongoDB
@@ -38,7 +37,7 @@ export class TaskQueue {
             delete task.progress; // Clear previous progress
             await upsertTask(task);
             logger.info(
-              `[TaskQueue] Reset interrupted task ${task._id} back to PENDING`
+              `[Queue] Reset interrupted task ${task._id} back to PENDING`
             );
           }
         }
@@ -49,20 +48,20 @@ export class TaskQueue {
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
         logger.info(
-          `[TaskQueue] Recovered ${this.queue.length} pending tasks from MongoDB`
+          `[Queue] Recovered ${this.queue.length} pending tasks from MongoDB`
         );
       }
 
       this.initialized = true;
-      logger.info("[TaskQueue] Initialization completed");
+      logger.info("[Queue] Initialization completed");
 
       // Start processing if we have tasks
       if (this.queue.length > 0 && !this.processing) {
-        logger.info(`[TaskQueue] Starting processing of recovered tasks...`);
+        logger.info(`[Queue] Starting processing of recovered tasks...`);
         setImmediate(() => this.processNext());
       }
     } catch (error) {
-      logger.error("[TaskQueue] Failed to initialize task queue:", error);
+      logger.error("[Queue] Failed to initialize task queue:", error);
       this.initialized = true; // Mark as initialized anyway to prevent retries
     }
   }
@@ -89,7 +88,7 @@ export class TaskQueue {
     // Add to in-memory queue
     this.queue.push(task);
     logger.info(
-      `[TaskQueue] Task ${task._id} added to queue for FID: ${fid}. Queue length: ${this.queue.length}`
+      `[Queue] Task ${task._id} added to queue for FID: ${fid}. Queue length: ${this.queue.length}`
     );
 
     // Start processing if not already processing
@@ -188,7 +187,7 @@ export class TaskQueue {
     this.currentTask = this.queue.shift()!;
 
     logger.info(
-      `[TaskQueue] Starting task ${this.currentTask._id!.toString()} for FID: ${
+      `[Queue] Starting task ${this.currentTask._id!.toString()} for FID: ${
         this.currentTask.fid
       }`
     );
@@ -209,7 +208,7 @@ export class TaskQueue {
             this.currentTask.progress = progress;
 
             logger.info(
-              `[TaskQueue] Task ${this.currentTask._id!.toString()} progress: ${
+              `[Queue] Task ${this.currentTask._id!.toString()} progress: ${
                 progress.message
               } (${progress.completedSteps}/${progress.totalSteps})`
             );
@@ -217,7 +216,7 @@ export class TaskQueue {
             // Save progress updates to MongoDB (async, but don't wait)
             upsertTask(this.currentTask).catch((error) => {
               logger.error(
-                `[TaskQueue] Failed to save progress for task ${this.currentTask?._id!.toString()}:`,
+                `[Queue] Failed to save progress for task ${this.currentTask?._id!.toString()}:`,
                 error
               );
             });
@@ -237,7 +236,7 @@ export class TaskQueue {
       };
 
       logger.info(
-        `[TaskQueue] Task ${
+        `[Queue] Task ${
           this.currentTask._id
         } completed successfully. USD Value: $${result.totalUsdValue.toFixed(
           2
@@ -250,7 +249,7 @@ export class TaskQueue {
       this.currentTask.error =
         error instanceof Error ? error.message : String(error);
 
-      logger.error(`[TaskQueue] Task ${this.currentTask._id} failed:`, error);
+      logger.error(`[Queue] Task ${this.currentTask._id} failed:`, error);
     } finally {
       // Save final task state to MongoDB
       if (this.currentTask) {
@@ -264,15 +263,15 @@ export class TaskQueue {
       // Process next task in queue if any
       if (this.queue.length > 0) {
         logger.info(
-          `[TaskQueue] Processing next task. Remaining in queue: ${this.queue.length}`
+          `[Queue] Processing next task. Remaining in queue: ${this.queue.length}`
         );
         setImmediate(() => this.processNext());
       } else {
-        logger.info(`[TaskQueue] Queue is empty. Waiting for new tasks.`);
+        logger.info(`[Queue] Queue is empty. Waiting for new tasks.`);
       }
     }
   }
 }
 
 // Singleton instance
-export const taskQueue = new TaskQueue();
+export const queue = new Queue();

@@ -3,7 +3,7 @@ dotenv.config();
 
 import express, { Request, Response } from "express";
 import { logger } from "./utils/logger";
-import { taskQueue } from "./utils/task-queue";
+import { queue } from "./utils/queue";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,7 +31,7 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
     logger.info(`[API] Starting task for FID: ${fid}`);
 
     // Add task to queue
-    const task = await taskQueue.addTask(fid);
+    const task = await queue.addTask(fid);
 
     return res.json({
       success: true,
@@ -61,7 +61,7 @@ app.get("/api/tasks/:taskId", async (req: Request, res: Response) => {
       });
     }
 
-    const task = await taskQueue.getTask(taskId);
+    const task = await queue.getTask(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -96,8 +96,8 @@ app.get("/api/tasks/:taskId", async (req: Request, res: Response) => {
 // API endpoint to list all tasks
 app.get("/api/tasks", async (_req: Request, res: Response) => {
   try {
-    const tasks = await taskQueue.getTasks();
-    const queueStatus = taskQueue.getStatus();
+    const tasks = await queue.getTasks();
+    const queueStatus = queue.getStatus();
 
     return res.json({
       success: true,
@@ -134,7 +134,7 @@ app.get("/api/tasks", async (_req: Request, res: Response) => {
 async function startServer() {
   try {
     // Initialize the task queue (recover incomplete tasks from MongoDB)
-    await taskQueue.initialize();
+    await queue.initialize();
 
     // Start listening for incoming requests
     app.listen(PORT, () => {
