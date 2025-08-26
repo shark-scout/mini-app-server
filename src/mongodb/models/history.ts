@@ -3,7 +3,7 @@ import { ZerionTransaction } from "../../types/zerion-transaction";
 
 export class History {
   constructor(
-    public created: Date,
+    public createdAt: Date,
     public address: string,
     public zerionTransactions: ZerionTransaction[],
     public minMinedAt: Date,

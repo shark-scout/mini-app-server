@@ -29,7 +29,7 @@ export async function createBalances(addresses: string[]): Promise<void> {
     );
     // Insert balance into MongoDB
     const balance: Balance = {
-      created: new Date(),
+      createdAt: new Date(),
       address: address,
       alchemyTokens: alchemyTokens,
     };

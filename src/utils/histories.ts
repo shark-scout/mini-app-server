@@ -38,7 +38,7 @@ export async function createHistories(
     );
     // Insert history into MongoDB
     const history: History = {
-      created: new Date(),
+      createdAt: new Date(),
       address: address,
       zerionTransactions: zerionTransactions,
       minMinedAt: minMinedAt,

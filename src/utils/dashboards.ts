@@ -110,7 +110,7 @@ export async function createDashboard(
 
   // Insert dashboard into MongoDB
   const dashboard: Dashboard = {
-    created: new Date(),
+    createdAt: new Date(),
     fid,
     trends,
   };
