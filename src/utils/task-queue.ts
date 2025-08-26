@@ -1,24 +1,87 @@
 import { randomUUID } from "crypto";
-import { Task, TaskStatus, TaskProgress } from "../types/task";
+import { Task } from "../mongodb/models/task";
+import {
+  getAllTasks as getAllTasksFromDb,
+  getIncompleteTasks,
+  getTask as getTaskFromDb,
+  upsertTask,
+} from "../mongodb/services/tasks";
+import { TaskProgress, TaskStatus } from "../types/task";
 import { logger } from "./logger";
 import { processTaskWithProgress } from "./tasks";
 
+// TODO: Rename to queue.ts
 export class TaskQueue {
   private queue: Task[] = [];
   private processing = false;
   private currentTask: Task | null = null;
-  private completedTasks: Task[] = []; // Store completed tasks for history
+  private initialized = false;
+
+  /**
+   * Initialize the task queue by recovering incomplete tasks from MongoDB
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    try {
+      logger.info(
+        "[TaskQueue] Initializing task queue and recovering incomplete tasks..."
+      );
+
+      // Get incomplete tasks from MongoDB
+      const incompleteTasks = await getIncompleteTasks();
+
+      if (incompleteTasks.length > 0) {
+        // Reset PROCESSING tasks back to PENDING as they were interrupted
+        for (const task of incompleteTasks) {
+          if (task.status === TaskStatus.PROCESSING) {
+            task.status = TaskStatus.PENDING;
+            delete task.progress; // Clear previous progress
+            await upsertTask(task);
+            logger.info(
+              `[TaskQueue] Reset interrupted task ${task.id} back to PENDING`
+            );
+          }
+        }
+
+        // Add all pending tasks to the queue
+        this.queue = incompleteTasks
+          .filter((task) => task.status === TaskStatus.PENDING)
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+        logger.info(
+          `[TaskQueue] Recovered ${this.queue.length} pending tasks from MongoDB`
+        );
+      }
+
+      this.initialized = true;
+
+      // Start processing if we have tasks
+      if (this.queue.length > 0 && !this.processing) {
+        logger.info(`[TaskQueue] Starting processing of recovered tasks...`);
+        setImmediate(() => this.processNext());
+      }
+    } catch (error) {
+      logger.error("[TaskQueue] Failed to initialize task queue:", error);
+      this.initialized = true; // Mark as initialized anyway to prevent retries
+    }
+  }
 
   /**
    * Add a new task to the queue
    */
-  addTask(fid: number): Task {
-    const task: Task = {
-      id: randomUUID(),
-      fid,
-      status: TaskStatus.PENDING,
-      createdAt: new Date(),
-    };
+  async addTask(fid: number): Promise<Task> {
+    // Initialize if not already done
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    const task = new Task(randomUUID(), fid, TaskStatus.PENDING, new Date());
+
+    // Save task to MongoDB
+    await upsertTask(task);
 
     this.queue.push(task);
     logger.info(
@@ -36,7 +99,13 @@ export class TaskQueue {
   /**
    * Get task by ID
    */
-  getTask(taskId: string): Task | undefined {
+  async getTask(taskId: string): Promise<Task | undefined> {
+    // Initialize if not already done
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    // Check current task
     if (this.currentTask?.id === taskId) {
       return this.currentTask;
     }
@@ -47,19 +116,40 @@ export class TaskQueue {
       return queuedTask;
     }
 
-    // Check in completed tasks
-    return this.completedTasks.find((task) => task.id === taskId);
+    // Check in MongoDB for completed/failed tasks
+    const taskFromDb = await getTaskFromDb(taskId);
+    return taskFromDb || undefined;
   }
 
   /**
    * Get all tasks (pending, current, and completed)
    */
-  getAllTasks(): Task[] {
-    const allTasks = [...this.completedTasks, ...this.queue];
-    if (this.currentTask) {
-      allTasks.unshift(this.currentTask);
+  async getAllTasks(): Promise<Task[]> {
+    // Initialize if not already done
+    if (!this.initialized) {
+      await this.initialize();
     }
-    return allTasks;
+
+    // Get all tasks from MongoDB
+    const allTasksFromDb = await getAllTasksFromDb();
+
+    // Create a map for quick lookup
+    const taskMap = new Map<string, Task>(
+      allTasksFromDb.map((task) => [task.id, task])
+    );
+
+    // Update with current in-memory state
+    for (const task of this.queue) {
+      taskMap.set(task.id, task);
+    }
+
+    if (this.currentTask) {
+      taskMap.set(this.currentTask.id, this.currentTask);
+    }
+
+    return Array.from(taskMap.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
   }
 
   /**
@@ -99,6 +189,9 @@ export class TaskQueue {
     this.currentTask.status = TaskStatus.PROCESSING;
     this.currentTask.startedAt = new Date();
 
+    // Save status update to MongoDB
+    await upsertTask(this.currentTask);
+
     try {
       // Process the task with progress updates
       const result = await processTaskWithProgress(
@@ -106,9 +199,18 @@ export class TaskQueue {
         (progress: TaskProgress) => {
           if (this.currentTask) {
             this.currentTask.progress = progress;
+
             logger.info(
               `[TaskQueue] Task ${this.currentTask.id} progress: ${progress.message} (${progress.completedSteps}/${progress.totalSteps})`
             );
+
+            // Save progress updates to MongoDB (async, but don't wait)
+            upsertTask(this.currentTask).catch((error) => {
+              logger.error(
+                `[TaskQueue] Failed to save progress for task ${this.currentTask?.id}:`,
+                error
+              );
+            });
           }
         }
       );
@@ -140,13 +242,9 @@ export class TaskQueue {
 
       logger.error(`[TaskQueue] Task ${this.currentTask.id} failed:`, error);
     } finally {
-      // Move completed task to history
+      // Save final task state to MongoDB
       if (this.currentTask) {
-        this.completedTasks.push(this.currentTask);
-        // Keep only last 100 completed tasks to prevent memory issues
-        if (this.completedTasks.length > 100) {
-          this.completedTasks = this.completedTasks.slice(-100);
-        }
+        await upsertTask(this.currentTask);
       }
 
       // Reset processing state and continue with next task

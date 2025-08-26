@@ -31,7 +31,7 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
     logger.info(`[API] Creating task for FID: ${fid}`);
 
     // Add task to queue
-    const task = taskQueue.addTask(fid);
+    const task = await taskQueue.addTask(fid);
 
     return res.json({
       success: true,
@@ -50,7 +50,7 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
 });
 
 // API endpoint to get task status
-app.get("/api/tasks/:taskId", (req: Request, res: Response) => {
+app.get("/api/tasks/:taskId", async (req: Request, res: Response) => {
   try {
     const { taskId } = req.params;
 
@@ -61,7 +61,7 @@ app.get("/api/tasks/:taskId", (req: Request, res: Response) => {
       });
     }
 
-    const task = taskQueue.getTask(taskId);
+    const task = await taskQueue.getTask(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -94,9 +94,9 @@ app.get("/api/tasks/:taskId", (req: Request, res: Response) => {
 });
 
 // API endpoint to list all tasks
-app.get("/api/tasks", (_req: Request, res: Response) => {
+app.get("/api/tasks", async (_req: Request, res: Response) => {
   try {
-    const tasks = taskQueue.getAllTasks();
+    const tasks = await taskQueue.getAllTasks();
     const queueStatus = taskQueue.getStatus();
 
     return res.json({
@@ -130,13 +130,57 @@ app.get("/api/tasks", (_req: Request, res: Response) => {
   }
 });
 
-// Start the server
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-  logger.info(`Start task: POST http://localhost:${PORT}/api/tasks/start`);
-  logger.info(
-    `Get task status: GET http://localhost:${PORT}/api/tasks/:taskId`
-  );
-  logger.info(`List all tasks: GET http://localhost:${PORT}/api/tasks`);
+// API endpoint to get task queue statistics
+app.get("/api/tasks/stats", async (_req: Request, res: Response) => {
+  try {
+    const allTasks = await taskQueue.getAllTasks();
+
+    const stats = {
+      total: allTasks.length,
+      pending: allTasks.filter((task) => task.status === "pending").length,
+      processing: allTasks.filter((task) => task.status === "processing")
+        .length,
+      completed: allTasks.filter((task) => task.status === "completed").length,
+      failed: allTasks.filter((task) => task.status === "failed").length,
+      queueStatus: taskQueue.getStatus(),
+    };
+
+    return res.json({
+      success: true,
+      stats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error("[API] Error getting task stats:", error);
+    return res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to get task statistics",
+    });
+  }
 });
+
+// Start the server
+async function startServer() {
+  try {
+    // Initialize the task queue (recover incomplete tasks from MongoDB)
+    await taskQueue.initialize();
+
+    app.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`Health check: http://localhost:${PORT}/health`);
+      logger.info(`Start task: POST http://localhost:${PORT}/api/tasks/start`);
+      logger.info(
+        `Get task status: GET http://localhost:${PORT}/api/tasks/:taskId`
+      );
+      logger.info(`List all tasks: GET http://localhost:${PORT}/api/tasks`);
+      logger.info(
+        `Task statistics: GET http://localhost:${PORT}/api/tasks/stats`
+      );
+    });
+  } catch (error) {
+    logger.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();

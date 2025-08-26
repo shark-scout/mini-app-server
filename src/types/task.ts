@@ -5,7 +5,7 @@ export enum TaskStatus {
   FAILED = "failed",
 }
 
-export interface TaskProgress {
+export type TaskProgress = {
   stage:
     | "loading_followers"
     | "filtering"
@@ -15,23 +15,11 @@ export interface TaskProgress {
   completedSteps: number;
   totalSteps: number;
   message: string;
-}
+};
 
-export interface TaskResult {
+export type TaskResult = {
   followersCount: number;
   filteredFollowersCount: number;
   addressesProcessed: number;
   totalUsdValue: number;
-}
-
-export interface Task {
-  id: string;
-  fid: number;
-  status: TaskStatus;
-  createdAt: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-  progress?: TaskProgress;
-  result?: TaskResult;
-  error?: string;
-}
+};
