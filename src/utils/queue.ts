@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import { Task } from "../mongodb/models/task";
 import { findTasks, upsertTask } from "../mongodb/services/tasks";
-import { TaskProgress, TaskStatus } from "../types/task";
+import { TaskProcessingStage, TaskStatus } from "../types/task";
 import { logger } from "./logger";
-import { processTaskWithProgress } from "./tasks";
+import { processTask } from "./tasks";
 
 export class Queue {
   private queue: Task[] = [];
@@ -34,7 +34,7 @@ export class Queue {
         for (const task of incompleteTasks) {
           if (task.status === TaskStatus.PROCESSING) {
             task.status = TaskStatus.PENDING;
-            delete task.progress; // Clear previous progress
+            delete task.processingStage; // Clear previous processing stage
             await upsertTask(task);
             logger.info(
               `[Queue] Reset interrupted task ${task._id} back to PENDING`
@@ -155,21 +155,21 @@ export class Queue {
     await upsertTask(this.currentTask);
 
     try {
-      // Process the task with progress updates
-      const result = await processTaskWithProgress(
+      // Process the task with processing stage updates
+      const result = await processTask(
         this.currentTask.fid,
-        (progress: TaskProgress) => {
+        (processingStage: TaskProcessingStage) => {
           if (this.currentTask) {
-            this.currentTask.progress = progress;
+            this.currentTask.processingStage = processingStage;
 
             logger.info(
-              `[Queue] Task ${this.currentTask._id} progress: ${progress.message} (${progress.completedSteps}/${progress.totalSteps})`
+              `[Queue] Task ${this.currentTask._id} processing stage: ${processingStage}`
             );
 
-            // Save progress updates to MongoDB (async, but don't wait)
+            // Save processing stage updates to MongoDB (async, but don't wait)
             upsertTask(this.currentTask).catch((error) => {
               logger.error(
-                `[Queue] Failed to save progress for task ${this.currentTask?._id}:`,
+                `[Queue] Failed to save processing stage for task ${this.currentTask?._id}:`,
                 error
               );
             });
@@ -181,12 +181,7 @@ export class Queue {
       this.currentTask.status = TaskStatus.COMPLETED;
       this.currentTask.completedAt = new Date();
       this.currentTask.result = result;
-      this.currentTask.progress = {
-        stage: "completed",
-        completedSteps: 4,
-        totalSteps: 4,
-        message: "Task completed successfully",
-      };
+      this.currentTask.processingStage = TaskProcessingStage.COMPLETED;
 
       logger.info(
         `[Queue] Task ${

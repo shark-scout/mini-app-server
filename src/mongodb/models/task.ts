@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { TaskProgress, TaskResult, TaskStatus } from "../../types/task";
+import { TaskProcessingStage, TaskResult, TaskStatus } from "../../types/task";
 
 export class Task {
   constructor(
@@ -8,7 +8,7 @@ export class Task {
     public status: TaskStatus,
     public startedAt?: Date,
     public completedAt?: Date,
-    public progress?: TaskProgress,
+    public processingStage?: TaskProcessingStage,
     public result?: TaskResult,
     public error?: string,
     public _id?: ObjectId

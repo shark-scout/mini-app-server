@@ -5,17 +5,13 @@ export enum TaskStatus {
   FAILED = "failed",
 }
 
-export type TaskProgress = {
-  stage:
-    | "loading_followers"
-    | "filtering"
-    | "fetching_balances"
-    | "calculating_value"
-    | "completed";
-  completedSteps: number;
-  totalSteps: number;
-  message: string;
-};
+export enum TaskProcessingStage {
+  LOADING_FOLLOWERS = "loading_followers",
+  FILTERING = "filtering",
+  FETCHING_BALANCES = "fetching_balances",
+  CALCULATING_VALUE = "calculating_value",
+  COMPLETED = "completed",
+}
 
 export type TaskResult = {
   followersCount: number;
