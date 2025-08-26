@@ -1,6 +1,4 @@
-# Shark Scout Mini App Server
-
-A Node.js/TypeScript server application for processing Farcaster user data, analyzing crypto balances, and providing insights for social media followers with high engagement scores.
+# Shark Scout - Mini App Server
 
 ## Overview
 
