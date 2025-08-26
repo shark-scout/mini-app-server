@@ -1,12 +1,11 @@
 import { ObjectId } from "mongodb";
-import { TaskStatus, TaskProgress, TaskResult } from "../../types/task";
+import { TaskProgress, TaskResult, TaskStatus } from "../../types/task";
 
 export class Task {
   constructor(
-    public id: string,
+    public createdAt: Date,
     public fid: number,
     public status: TaskStatus,
-    public createdAt: Date,
     public startedAt?: Date,
     public completedAt?: Date,
     public progress?: TaskProgress,

@@ -28,23 +28,23 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
       });
     }
 
-    logger.info(`[API] Creating task for FID: ${fid}`);
+    logger.info(`[API] Starting task for FID: ${fid}`);
 
     // Add task to queue
     const task = await taskQueue.addTask(fid);
 
     return res.json({
       success: true,
-      message: `Task created for FID: ${fid}`,
-      taskId: task.id,
+      message: `Task started for FID: ${fid}`,
+      taskId: task._id,
       status: task.status,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error("[API] Error creating task:", error);
+    logger.error("[API] Error starting task:", error);
     return res.status(500).json({
       error: "Internal server error",
-      message: "Failed to create task",
+      message: "Failed to start task",
     });
   }
 });
@@ -73,7 +73,7 @@ app.get("/api/tasks/:taskId", async (req: Request, res: Response) => {
     return res.json({
       success: true,
       task: {
-        id: task.id,
+        id: task._id,
         fid: task.fid,
         status: task.status,
         createdAt: task.createdAt,
@@ -96,14 +96,14 @@ app.get("/api/tasks/:taskId", async (req: Request, res: Response) => {
 // API endpoint to list all tasks
 app.get("/api/tasks", async (_req: Request, res: Response) => {
   try {
-    const tasks = await taskQueue.getAllTasks();
+    const tasks = await taskQueue.getTasks();
     const queueStatus = taskQueue.getStatus();
 
     return res.json({
       success: true,
       queueStatus,
       tasks: tasks.map((task) => ({
-        id: task.id,
+        id: task._id,
         fid: task.fid,
         status: task.status,
         createdAt: task.createdAt,
@@ -130,52 +130,15 @@ app.get("/api/tasks", async (_req: Request, res: Response) => {
   }
 });
 
-// API endpoint to get task queue statistics
-app.get("/api/tasks/stats", async (_req: Request, res: Response) => {
-  try {
-    const allTasks = await taskQueue.getAllTasks();
-
-    const stats = {
-      total: allTasks.length,
-      pending: allTasks.filter((task) => task.status === "pending").length,
-      processing: allTasks.filter((task) => task.status === "processing")
-        .length,
-      completed: allTasks.filter((task) => task.status === "completed").length,
-      failed: allTasks.filter((task) => task.status === "failed").length,
-      queueStatus: taskQueue.getStatus(),
-    };
-
-    return res.json({
-      success: true,
-      stats,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    logger.error("[API] Error getting task stats:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      message: "Failed to get task statistics",
-    });
-  }
-});
-
 // Start the server
 async function startServer() {
   try {
     // Initialize the task queue (recover incomplete tasks from MongoDB)
     await taskQueue.initialize();
 
+    // Start listening for incoming requests
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
-      logger.info(`Health check: http://localhost:${PORT}/health`);
-      logger.info(`Start task: POST http://localhost:${PORT}/api/tasks/start`);
-      logger.info(
-        `Get task status: GET http://localhost:${PORT}/api/tasks/:taskId`
-      );
-      logger.info(`List all tasks: GET http://localhost:${PORT}/api/tasks`);
-      logger.info(
-        `Task statistics: GET http://localhost:${PORT}/api/tasks/stats`
-      );
     });
   } catch (error) {
     logger.error("Failed to start server:", error);
