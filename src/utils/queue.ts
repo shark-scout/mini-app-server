@@ -69,6 +69,7 @@ export class Queue {
   /**
    * Add a new task to the queue
    */
+  // TODO: Don't add task if already exists for the same fid
   async addTask(fid: number): Promise<Task> {
     // Initialize if not already done
     if (!this.initialized) {
@@ -100,79 +101,28 @@ export class Queue {
   }
 
   /**
-   * Get task by ID
+   * Get task by FID
    */
-  async getTask(taskId: string): Promise<Task | undefined> {
+  async getTask(fid: number): Promise<Task | undefined> {
     // Initialize if not already done
     if (!this.initialized) {
       await this.initialize();
     }
 
     // Check current task
-    if (this.currentTask?._id?.toString() === taskId) {
+    if (this.currentTask?.fid === fid) {
       return this.currentTask;
     }
 
     // Check in pending queue
-    const queuedTask = this.queue.find(
-      (task) => task._id?.toString() === taskId
-    );
+    const queuedTask = this.queue.find((task) => task.fid === fid);
     if (queuedTask) {
       return queuedTask;
     }
 
     // Check in MongoDB
-    const tasks = await findTasks({ id: taskId });
+    const tasks = await findTasks({ fid: fid });
     return tasks[0];
-  }
-
-  /**
-   * Get all tasks
-   */
-  async getTasks(): Promise<Task[]> {
-    // Initialize if not already done
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    // Get all tasks from MongoDB
-    const tasks = await findTasks();
-
-    // Create a map for quick lookup
-    const taskMap = new Map<string, Task>(
-      tasks.map((task) => [task._id!.toString(), task])
-    );
-
-    // Update with current in-memory state
-    for (const task of this.queue) {
-      taskMap.set(task._id!.toString(), task);
-    }
-
-    if (this.currentTask) {
-      taskMap.set(this.currentTask._id!.toString(), this.currentTask);
-    }
-
-    return Array.from(taskMap.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-    );
-  }
-
-  /**
-   * Get queue status
-   */
-  getStatus() {
-    return {
-      queueLength: this.queue.length,
-      processing: this.processing,
-      currentTask: this.currentTask
-        ? {
-            id: this.currentTask._id!.toString(),
-            fid: this.currentTask.fid,
-            status: this.currentTask.status,
-            progress: this.currentTask.progress,
-          }
-        : null,
-    };
   }
 
   /**

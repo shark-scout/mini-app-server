@@ -7,6 +7,7 @@ import { getCollection } from "./collections";
 
 export async function findTasks(args?: {
   id?: string;
+  fid?: number;
   statuses?: TaskStatus[];
 }): Promise<Task[]> {
   logger.info("[MongoDB] Finding tasks...");
@@ -14,6 +15,7 @@ export async function findTasks(args?: {
   const tasks = await collection
     .find({
       ...(args?.id !== undefined && { _id: new ObjectId(args.id) }),
+      ...(args?.fid !== undefined && { fid: args.fid }),
       ...(args?.statuses !== undefined && { status: { $in: args.statuses } }),
     })
     .sort({ createdAt: -1 })
