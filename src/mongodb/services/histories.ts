@@ -22,7 +22,7 @@ export async function findHistories(args?: {
       ...(args?.minMinedAt !== undefined && { minMinedAt: args.minMinedAt }),
       ...(args?.maxMinedAt !== undefined && { maxMinedAt: args.maxMinedAt }),
     })
-    .sort({ created: -1 })
+    .sort({ createdAt: -1 })
     .toArray();
   return histories;
 }
