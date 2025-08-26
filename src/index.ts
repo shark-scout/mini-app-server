@@ -28,7 +28,7 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
     logger.info(`[API] Starting task for FID: ${fid}`);
 
     // Add task to queue
-    const { existing } = await queue.addTask(fid);
+    const { task, existing } = await queue.addTask(fid);
 
     if (existing) {
       return res
@@ -36,7 +36,7 @@ app.post("/api/tasks/start", async (req: Request, res: Response) => {
         .json({ message: `Task for FID ${fid} already exists` });
     }
 
-    return res.json({});
+    return res.json({ task: task });
   } catch (error) {
     logger.error("[API] Error starting task:", error);
     return res.status(500).json({ message: "Failed to start task" });
@@ -80,10 +80,10 @@ async function startServer() {
 
     // Start listening for incoming requests
     app.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`[Server] is running on port ${PORT}`);
     });
   } catch (error) {
-    logger.error("Failed to start server:", error);
+    logger.error("[Server] Failed to start server:", error);
     process.exit(1);
   }
 }
