@@ -186,7 +186,7 @@ export class Queue {
       logger.info(
         `[Queue] Task ${
           this.currentTask._id
-        } completed successfully. USD Value: $${result.totalUsdValue.toFixed(
+        } completed successfully. Balances USD value: $${result.balancesUsdValue.toFixed(
           2
         )}`
       );

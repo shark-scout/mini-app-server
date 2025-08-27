@@ -6,16 +6,15 @@ export enum TaskStatus {
 }
 
 export enum TaskProcessingStage {
-  LOADING_FOLLOWERS = "loading_followers",
-  FILTERING = "filtering",
+  FETCHING_FOLLOWERS = "fetching_followers",
   FETCHING_BALANCES = "fetching_balances",
-  CALCULATING_VALUE = "calculating_value",
   COMPLETED = "completed",
 }
 
 export type TaskResult = {
-  followersCount: number;
-  filteredFollowersCount: number;
-  addressesProcessed: number;
-  totalUsdValue: number;
+  followers: number;
+  filteredFollowers: number;
+  addresses: number;
+  balances: number;
+  balancesUsdValue: number;
 };
