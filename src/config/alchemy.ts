@@ -1,4 +1,4 @@
 export const alchemyConfig = {
-  maxIterations: 3, // TODO: Adjust for production use
-  delay: 500, // TODO: Adjust for production use
+  maxIterations: 5, // TODO: Adjust for production use
+  delay: 100, // TODO: Adjust for production use
 };
