@@ -3,22 +3,19 @@ dotenv.config();
 
 import { logger } from "../utils/logger";
 import { fetchUserFollowers } from "../utils/neynar";
+import { taskConfig } from "../config/task";
 
 async function main() {
   logger.info("[Tool] Starting script...");
 
-  const fid = 1094198;
+  const fid = 298587;
   const followers = await fetchUserFollowers(fid);
   const filteredFollowers = followers.filter(
-    (follower) => follower.user.score && follower.user.score >= 0.9
+    (follower) =>
+      follower.user.score && follower.user.score >= taskConfig.minNeynarScore
   );
-  const addresses = filteredFollowers
-    .map((follower) => follower.user.verified_addresses.primary.eth_address)
-    .filter((address) => address !== null);
-  logger.info(`[Tool] Total followers: ${followers.length}`);
+  logger.info(`[Tool] Followers: ${followers.length}`);
   logger.info(`[Tool] Filtered followers: ${filteredFollowers.length}`);
-  logger.info(`[Tool] Addresses: ${addresses.length}`);
-  logger.info(`[Tool] Addresses: ${JSON.stringify(addresses)}`);
 
   // Wait a bit before exiting to ensure all logs are saved
   await new Promise((resolve) => setTimeout(resolve, 2000));
