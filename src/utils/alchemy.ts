@@ -31,11 +31,17 @@ function getTokenUsdValue(token: AlchemyToken): number | undefined {
   const divisor = BigInt(10 ** decimals);
   const actualAmount = Number(balanceDecimal) / Number(divisor);
 
-  // Calculate USD value if price is within acceptable range
-  const usdPriceValue = parseFloat(usdPrice.value);
-  if (usdPriceValue > alchemyConfig.maxUsdPriceValue) {
+  // Check last update date
+  const lastUpdatedAt = new Date(usdPrice.lastUpdatedAt);
+  const minLastUpdatedAt = new Date(
+    Date.now() - alchemyConfig.usdPriceActualityTime
+  );
+  if (lastUpdatedAt < minLastUpdatedAt) {
     return undefined;
   }
+
+  // Calculate USD value
+  const usdPriceValue = parseFloat(usdPrice.value);
   const usdValue = actualAmount * usdPriceValue;
 
   return usdValue;
@@ -44,7 +50,7 @@ function getTokenUsdValue(token: AlchemyToken): number | undefined {
 export async function getTokensByWallet(
   address: string
 ): Promise<AlchemyToken[]> {
-  logger.info(`[Alchemy] Getting tokens by wallet for ${address}...`);
+  logger.info(`[Alchemy] Getting tokens by wallet for ${address}`);
 
   let totalTokens: AlchemyToken[] = [];
   let iterationPageKey: string | undefined | null = undefined;
