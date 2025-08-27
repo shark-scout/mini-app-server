@@ -1,4 +1,6 @@
-export const demoAlchemyTokens = [
+import { AlchemyToken } from "../types/alchemy-token";
+
+export const demoAlchemyTokens: AlchemyToken[] = [
   {
     address: "0x4306d7a79265d2cb85db0c5a55ea5f4f6f73c4b1",
     network: "base-mainnet",
