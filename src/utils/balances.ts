@@ -1,7 +1,5 @@
-import { alchemyConfig } from "../config/alchemy";
 import { Balance } from "../mongodb/models/balance";
 import { findBalances, insertBalance } from "../mongodb/services/balances";
-import { AlchemyToken } from "../types/alchemy-token";
 import { getTokensByWallet, getTokenUsdValue } from "./alchemy";
 import { logger } from "./logger";
 
@@ -16,48 +14,13 @@ async function createBalance(address: string): Promise<void> {
   }
 
   // Get tokens from Alchemy API
-  let iterationPageKey: string | undefined = undefined;
-  let totalTokens: AlchemyToken[] = [];
-  let iterationCount = 0;
-
-  do {
-    const { tokens, pageKey } = await getTokensByWallet(
-      address,
-      iterationPageKey
-    );
-
-    // Add tokens to the total collection
-    totalTokens = totalTokens.concat(tokens);
-
-    // Update page key for next iteration
-    iterationPageKey = pageKey;
-
-    // Increment iteration count
-    iterationCount++;
-
-    // Wait to avoid hitting Alchemy API rate limits
-    await new Promise((resolve) => setTimeout(resolve, alchemyConfig.delay));
-
-    logger.info(
-      `[Balances] Retrieved ${tokens.length} tokens from Alchemy API. Total: ${totalTokens.length}. Iteration: ${iterationCount}`
-    );
-  } while (iterationPageKey && iterationCount < alchemyConfig.maxIterations);
-
-  if (iterationCount >= alchemyConfig.maxIterations) {
-    logger.info(
-      `[Balances] Reached maximum iterations limit: ${alchemyConfig.maxIterations}. Retrieved ${totalTokens.length} tokens`
-    );
-  } else {
-    logger.info(
-      `[Balances] Retrieved total ${totalTokens.length} tokens from Alchemy API`
-    );
-  }
+  const alchemyTokens = await getTokensByWallet(address);
 
   // Insert balance into MongoDB
   const balance: Balance = {
     createdAt: new Date(),
     address: address,
-    alchemyTokens: totalTokens,
+    alchemyTokens: alchemyTokens,
   };
   await insertBalance(balance);
 }

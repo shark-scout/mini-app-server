@@ -1,35 +1,54 @@
 import axios from "axios";
+import { alchemyConfig } from "../config/alchemy";
 import { AlchemyToken } from "../types/alchemy-token";
 import { logger } from "./logger";
 
 export async function getTokensByWallet(
-  address: string,
-  pageKey?: string
-): Promise<{
-  tokens: AlchemyToken[];
-  pageKey: string | undefined;
-}> {
-  logger.info(`[Alchemy] Getting tokens by wallet...`);
+  address: string
+): Promise<AlchemyToken[]> {
+  logger.info(`[Alchemy] Getting tokens by wallet for ${address}...`);
 
-  const { data } = await axios.post(
-    `https://api.g.alchemy.com/data/v1/${process.env.ALCHEMY_API_KEY}/assets/tokens/by-address`,
-    {
-      addresses: [
-        {
-          address: address,
-          networks: ["base-mainnet"],
-        },
-      ],
-      ...(pageKey && { pageKey: pageKey }),
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  let totalTokens: AlchemyToken[] = [];
+  let iterationPageKey: string | undefined | null = undefined;
+  let iterationCount = 0;
 
-  return { tokens: data.data.tokens, pageKey: data.data.pageKey };
+  do {
+    // Get tokens with the current cursor
+    const { data } = await axios.post(
+      `https://api.g.alchemy.com/data/v1/${process.env.ALCHEMY_API_KEY}/assets/tokens/by-address`,
+      {
+        addresses: [
+          {
+            address: address,
+            networks: "base-mainnet",
+          },
+        ],
+        ...(iterationPageKey ? { pageKey: iterationPageKey } : {}),
+      }
+    );
+
+    const response: {
+      data: { tokens: AlchemyToken[]; pageKey: string | null };
+    } = data;
+
+    // Add tokens to the total collection
+    totalTokens = totalTokens.concat(response.data.tokens);
+
+    // Update page key for next iteration
+    iterationPageKey = response.data.pageKey;
+
+    // Increment iteration count
+    iterationCount++;
+
+    // Wait to avoid hitting API rate limits
+    await new Promise((resolve) => setTimeout(resolve, alchemyConfig.delay));
+
+    logger.info(
+      `[Alchemy] Got ${response.data.tokens.length} tokens. Total: ${totalTokens.length}. Iteration: ${iterationCount}`
+    );
+  } while (iterationPageKey && iterationCount < alchemyConfig.maxIterations);
+
+  return totalTokens;
 }
 
 export function getTokenUsdValue(token: AlchemyToken): number | undefined {
