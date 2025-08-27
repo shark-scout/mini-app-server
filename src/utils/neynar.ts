@@ -8,6 +8,11 @@ export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
 
   const config = new Configuration({
     apiKey: process.env.NEYNAR_API_KEY as string,
+    baseOptions: {
+      headers: {
+        "x-neynar-experimental": neynarConfig.experimental,
+      },
+    },
   });
   const client = new NeynarAPIClient(config);
 
