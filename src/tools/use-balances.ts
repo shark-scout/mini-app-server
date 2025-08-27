@@ -17,6 +17,9 @@ async function main() {
   const balancesUsdValue = getBalancesUsdValue(balances);
   logger.info("USD value for balances: $" + balancesUsdValue.toFixed(2));
 
+  // Wait a bit before exiting to ensure all logs are saved
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
   logger.info("Script finished");
   process.exit(0);
 }
