@@ -80,8 +80,11 @@ export function getTokenUsdValue(token: AlchemyToken): number | undefined {
   const actualAmount = Number(balanceDecimal) / Number(divisor);
 
   // Calculate USD value
-  const priceValue = parseFloat(usdPrice.value);
-  const usdValue = actualAmount * priceValue;
+  const usdPriceValue = parseFloat(usdPrice.value);
+  if (usdPriceValue > alchemyConfig.maxUsdPriceValue) {
+    return undefined;
+  }
+  const usdValue = actualAmount * usdPriceValue;
 
   return usdValue;
 }
