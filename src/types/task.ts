@@ -15,6 +15,7 @@ export type TaskResult = {
   followers: number;
   filteredFollowers: number;
   addresses: number;
+  createdBalances: number;
   balances: number;
   balancesUsdValue: number;
 };
