@@ -1,6 +1,7 @@
+import { taskConfig } from "../config/task";
 import { findBalances } from "../mongodb/services/balances";
 import { TaskResult, TaskProcessingStage } from "../types/task";
-import { createBalances, getBalancesUsdValue } from "./balances";
+import { createBalances } from "./balances";
 import { logger } from "./logger";
 import { fetchUserFollowers } from "./neynar";
 
@@ -14,19 +15,24 @@ export async function processTask(
   onProcessingStageUpdate(TaskProcessingStage.FETCHING_FOLLOWERS);
   const followers = await fetchUserFollowers(fid);
   const filteredFollowers = followers.filter(
-    (follower) => follower.user.score && follower.user.score >= 0.9
+    (follower) =>
+      follower.user.score && follower.user.score >= taskConfig.minNeynarScore
   );
 
   // Getting balances
-  onProcessingStageUpdate(TaskProcessingStage.FETCHING_BALANCES);
+  onProcessingStageUpdate(TaskProcessingStage.CREATING_BALANCES);
   const addresses = filteredFollowers
     .map((follower) => follower.user.verified_addresses.primary.eth_address)
     .filter((address) => address !== null);
   await createBalances(addresses);
   const balances = await findBalances({ addresses });
 
-  // Calculate USD value for balances
-  const balancesUsdValue = getBalancesUsdValue(balances);
+  // Calculate balances USD value
+  const balancesUsdValue = balances.reduce(
+    (balancesUsdValue, balance) =>
+      balancesUsdValue + balance.alchemyTokensUsdValue,
+    0
+  );
 
   // Return the results
   return {

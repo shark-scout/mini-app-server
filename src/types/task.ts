@@ -7,7 +7,7 @@ export enum TaskStatus {
 
 export enum TaskProcessingStage {
   FETCHING_FOLLOWERS = "fetching_followers",
-  FETCHING_BALANCES = "fetching_balances",
+  CREATING_BALANCES = "creating_balances",
   COMPLETED = "completed",
 }
 

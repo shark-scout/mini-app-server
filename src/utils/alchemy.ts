@@ -3,6 +3,44 @@ import { alchemyConfig } from "../config/alchemy";
 import { AlchemyToken } from "../types/alchemy-token";
 import { logger } from "./logger";
 
+function getTokenUsdValue(token: AlchemyToken): number | undefined {
+  // Find USD price
+  const usdPrice = token.tokenPrices.find((price) => price.currency === "usd");
+  if (!usdPrice) {
+    return undefined;
+  }
+
+  // Convert hex tokenBalance to decimal
+  const balanceHex = token.tokenBalance;
+  const balanceDecimal = BigInt(balanceHex);
+
+  // Get token decimals from tokenMetadata
+  let decimals = token.tokenMetadata.decimals;
+
+  // If tokenAddress is null, it's ETH with 18 decimals
+  if (token.tokenAddress === null) {
+    decimals = 18;
+  }
+
+  // Skip tokens without decimal information as we can't calculate accurate balance
+  if (decimals === null || decimals === undefined) {
+    return undefined;
+  }
+
+  // Calculate actual token amount
+  const divisor = BigInt(10 ** decimals);
+  const actualAmount = Number(balanceDecimal) / Number(divisor);
+
+  // Calculate USD value if price is within acceptable range
+  const usdPriceValue = parseFloat(usdPrice.value);
+  if (usdPriceValue > alchemyConfig.maxUsdPriceValue) {
+    return undefined;
+  }
+  const usdValue = actualAmount * usdPriceValue;
+
+  return usdValue;
+}
+
 export async function getTokensByWallet(
   address: string
 ): Promise<AlchemyToken[]> {
@@ -51,40 +89,13 @@ export async function getTokensByWallet(
   return totalTokens;
 }
 
-export function getTokenUsdValue(token: AlchemyToken): number | undefined {
-  // Find USD price
-  const usdPrice = token.tokenPrices.find((price) => price.currency === "usd");
-  if (!usdPrice) {
-    return undefined;
+export function getTokensUsdValue(tokens: AlchemyToken[]): number {
+  let tokensUsdValue = 0;
+  for (const token of tokens) {
+    const tokenUsdValue = getTokenUsdValue(token);
+    if (tokenUsdValue) {
+      tokensUsdValue += tokenUsdValue;
+    }
   }
-
-  // Convert hex tokenBalance to decimal
-  const balanceHex = token.tokenBalance;
-  const balanceDecimal = BigInt(balanceHex);
-
-  // Get token decimals from tokenMetadata
-  let decimals = token.tokenMetadata.decimals;
-
-  // If tokenAddress is null, it's ETH with 18 decimals
-  if (token.tokenAddress === null) {
-    decimals = 18;
-  }
-
-  // Skip tokens without decimal information as we can't calculate accurate balance
-  if (decimals === null || decimals === undefined) {
-    return undefined;
-  }
-
-  // Calculate actual token amount
-  const divisor = BigInt(10 ** decimals);
-  const actualAmount = Number(balanceDecimal) / Number(divisor);
-
-  // Calculate USD value
-  const usdPriceValue = parseFloat(usdPrice.value);
-  if (usdPriceValue > alchemyConfig.maxUsdPriceValue) {
-    return undefined;
-  }
-  const usdValue = actualAmount * usdPriceValue;
-
-  return usdValue;
+  return tokensUsdValue;
 }

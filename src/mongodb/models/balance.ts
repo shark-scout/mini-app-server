@@ -6,6 +6,7 @@ export class Balance {
     public createdAt: Date,
     public address: string,
     public alchemyTokens: AlchemyToken[],
+    public alchemyTokensUsdValue: number,
     public _id?: ObjectId
   ) {}
 }

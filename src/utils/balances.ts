@@ -1,6 +1,6 @@
 import { Balance } from "../mongodb/models/balance";
 import { findBalances, insertBalance } from "../mongodb/services/balances";
-import { getTokensByWallet, getTokenUsdValue } from "./alchemy";
+import { getTokensByWallet, getTokensUsdValue } from "./alchemy";
 import { logger } from "./logger";
 
 async function createBalance(address: string): Promise<void> {
@@ -21,6 +21,7 @@ async function createBalance(address: string): Promise<void> {
     createdAt: new Date(),
     address: address,
     alchemyTokens: alchemyTokens,
+    alchemyTokensUsdValue: getTokensUsdValue(alchemyTokens),
   };
   await insertBalance(balance);
 }
@@ -34,33 +35,4 @@ export async function createBalances(addresses: string[]): Promise<void> {
     }
     await createBalance(address);
   }
-}
-
-export function getBalancesUsdValue(balances: Balance[]): number {
-  logger.info(`[Balances] Getting USD value for ${balances.length} balances`);
-  let balancesUsdValue = 0;
-  // Iterate each balance
-  for (const balance of balances) {
-    logger.info(
-      `[Balances] Getting USD value for address: ${balance.address}. Tokens: ${balance.alchemyTokens.length}`
-    );
-    let tokensUsdValue = 0;
-    // Iterate each token in the balance
-    for (const token of balance.alchemyTokens) {
-      const tokenUsdValue = getTokenUsdValue(token);
-      if (tokenUsdValue) {
-        tokensUsdValue += tokenUsdValue;
-      }
-    }
-    logger.info(
-      `[Balances] USD value for address ${
-        balance.address
-      }: $${tokensUsdValue.toFixed(2)}`
-    );
-
-    // Add to USD value for balances
-    balancesUsdValue += tokensUsdValue;
-  }
-
-  return balancesUsdValue;
 }
