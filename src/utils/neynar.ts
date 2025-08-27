@@ -5,7 +5,7 @@ import { logger } from "./logger";
 
 // TODO: Add try-catch
 export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
-  logger.info(`[Neynar] Fetching user followers for FID ${fid}...`);
+  logger.info(`[Neynar] Fetching user followers for ${fid}...`);
 
   const config = new Configuration({
     apiKey: process.env.NEYNAR_API_KEY as string,
@@ -18,17 +18,17 @@ export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
 
   do {
     // Fetch followers with the current cursor
-    const followersResponse = await client.fetchUserFollowers({
+    const response = await client.fetchUserFollowers({
       fid,
       ...(iterationCursor ? { cursor: iterationCursor } : {}),
       limit: neynarConfig.limit,
     });
 
     // Add followers to the total collection
-    totalFollowers = totalFollowers.concat(followersResponse.users);
+    totalFollowers = totalFollowers.concat(response.users);
 
     // Update cursor for next iteration
-    iterationCursor = followersResponse.next.cursor;
+    iterationCursor = response.next.cursor;
 
     // Increment iteration count
     iterationCount++;
@@ -37,7 +37,7 @@ export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
     await new Promise((resolve) => setTimeout(resolve, neynarConfig.delay));
 
     logger.info(
-      `[Neynar] Fetched ${followersResponse.users.length} followers. Total: ${totalFollowers.length}. Iteration: ${iterationCount}`
+      `[Neynar] Fetched ${response.users.length} followers. Total: ${totalFollowers.length}. Iteration: ${iterationCount}`
     );
   } while (iterationCursor && iterationCount < neynarConfig.maxIterations);
 
