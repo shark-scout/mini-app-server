@@ -1,14 +1,14 @@
+import { User } from "@neynar/nodejs-sdk/build/api";
 import { Dashboard } from "../mongodb/models/dashboard";
 import { History } from "../mongodb/models/history";
 import { insertDashboard } from "../mongodb/services/dashboards";
-import { NeynarUser } from "../types/neynar-user";
 import { Trend } from "../types/trend";
 import { logger } from "./logger";
 
 export async function createDashboard(
   fid: number,
   histories: History[],
-  users: NeynarUser[]
+  users: User[]
 ) {
   logger.info(`[Dashboards] Creating dashboard for FID: ${fid}`);
 
@@ -19,7 +19,7 @@ export async function createDashboard(
   }
 
   // Create a map to group users by their eth addresses
-  const addressToUserMap = new Map<string, NeynarUser>();
+  const addressToUserMap = new Map<string, User>();
   for (const user of users) {
     for (const ethAddress of user.verified_addresses.eth_addresses) {
       addressToUserMap.set(ethAddress.toLowerCase(), user);

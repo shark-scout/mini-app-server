@@ -14,7 +14,7 @@ export type Trend = {
   users: {
     fid: number;
     username: string;
-    pfp_url: string;
+    pfp_url: string | undefined;
     addresses: string[];
   }[];
   value: number;
