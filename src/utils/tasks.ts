@@ -19,12 +19,16 @@ export async function processTask(
       follower.user.score && follower.user.score >= taskConfig.minNeynarScore
   );
 
-  // Getting balances
+  // Create balance for each address if it doesn't exist
   onProcessingStageUpdate(TaskProcessingStage.CREATING_BALANCES);
   const addresses = filteredFollowers
     .map((follower) => follower.user.verified_addresses.primary.eth_address)
     .filter((address) => address !== null);
-  await createBalances(addresses);
+  const { createdCount: createdBalancesCount } = await createBalances(
+    addresses
+  );
+
+  // Finding balances for all addresses
   const balances = await findBalances({ addresses });
 
   // Calculate balances USD value
@@ -39,6 +43,7 @@ export async function processTask(
     followers: followers.length,
     filteredFollowers: filteredFollowers.length,
     addresses: addresses.length,
+    createdBalances: createdBalancesCount,
     balances: balances.length,
     balancesUsdValue: balancesUsdValue,
   };
