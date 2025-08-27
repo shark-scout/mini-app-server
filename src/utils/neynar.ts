@@ -3,7 +3,6 @@ import { Follower } from "@neynar/nodejs-sdk/build/api";
 import { neynarConfig } from "../config/neynar";
 import { logger } from "./logger";
 
-// TODO: Add try-catch
 export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
   logger.info(`[Neynar] Fetching user followers for ${fid}...`);
 
