@@ -1,15 +1,19 @@
+import { notificationsConfig } from "../config/notifications";
 import { taskConfig } from "../config/task";
 import { findBalances } from "../mongodb/services/balances";
-import { TaskResult, TaskProcessingStage } from "../types/task";
+import { TaskProcessingStage, TaskResult } from "../types/task";
 import { createBalances } from "./balances";
 import { logger } from "./logger";
-import { fetchUserFollowers } from "./neynar";
+import { fetchUserFollowers, sendNotification } from "./neynar";
 
 export async function processTask(
   fid: number,
   onProcessingStageUpdate: (processingStage: TaskProcessingStage) => void
 ): Promise<TaskResult> {
   logger.info(`[Tasks] Processing task for FID: ${fid}`);
+
+  // Fetch user's information to get their wallet address
+  // TODO:
 
   // Fetch and filter followers
   onProcessingStageUpdate(TaskProcessingStage.FETCHING_FOLLOWERS);
@@ -38,6 +42,15 @@ export async function processTask(
     0
   );
 
+  // Send notification to user
+  onProcessingStageUpdate(TaskProcessingStage.SENDING_NOTIFICATION);
+  const notificationStatus = await sendNotification(
+    fid,
+    notificationsConfig.title,
+    notificationsConfig.body,
+    notificationsConfig.targetUrl
+  );
+
   // Return the results
   return {
     followers: followers.length,
@@ -46,5 +59,6 @@ export async function processTask(
     createdBalances: createdBalancesCount,
     balances: balances.length,
     balancesUsdValue: balancesUsdValue,
+    notificationStatus: notificationStatus,
   };
 }

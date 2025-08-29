@@ -3,18 +3,19 @@ import { Follower } from "@neynar/nodejs-sdk/build/api";
 import { neynarConfig } from "../config/neynar";
 import { logger } from "./logger";
 
+const config = new Configuration({
+  apiKey: process.env.NEYNAR_API_KEY as string,
+  baseOptions: {
+    headers: {
+      "x-neynar-experimental": neynarConfig.experimental,
+    },
+  },
+});
+
+const client = new NeynarAPIClient(config);
+
 export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
   logger.info(`[Neynar] Fetching user followers for ${fid}...`);
-
-  const config = new Configuration({
-    apiKey: process.env.NEYNAR_API_KEY as string,
-    baseOptions: {
-      headers: {
-        "x-neynar-experimental": neynarConfig.experimental,
-      },
-    },
-  });
-  const client = new NeynarAPIClient(config);
 
   let totalFollowers: Follower[] = [];
   let iterationCursor: string | undefined | null = undefined;
@@ -46,4 +47,28 @@ export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
   } while (iterationCursor && iterationCount < neynarConfig.maxIterations);
 
   return totalFollowers;
+}
+
+export async function sendNotification(
+  fid: number,
+  title: string,
+  body: string,
+  targetUrl: string
+): Promise<string> {
+  logger.info(`[Neynar] Sending notification to ${fid}...`);
+
+  const response = await client.publishFrameNotifications({
+    targetFids: [fid],
+    notification: {
+      title: title,
+      body: body,
+      target_url: targetUrl,
+    },
+  });
+  if (response.notification_deliveries.length === 0) {
+    return "not_sent";
+  }
+  return response.notification_deliveries
+    .map((delivery) => delivery.status)
+    .join(", ");
 }
