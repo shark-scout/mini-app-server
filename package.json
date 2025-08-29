@@ -1,6 +1,9 @@
 {
   "name": "mini-app-server",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
