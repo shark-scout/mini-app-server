@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import cors from "cors";
 import express, { Request, Response } from "express";
 import { logger } from "./utils/logger";
 import { queue } from "./utils/queue";
@@ -8,7 +9,17 @@ import { queue } from "./utils/queue";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const corsOptions = {
+  origin: [
+    "https://miniapp.sharkscout.tech",
+    "https://first-ewe-caring.ngrok-free.app",
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200, // For legacy browser support
+};
+
 // Middleware
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // API endpoint to check server health
