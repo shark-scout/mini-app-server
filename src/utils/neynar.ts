@@ -1,5 +1,5 @@
 import { Configuration, NeynarAPIClient } from "@neynar/nodejs-sdk";
-import { Follower } from "@neynar/nodejs-sdk/build/api";
+import { Follower, User } from "@neynar/nodejs-sdk/build/api";
 import { neynarConfig } from "../config/neynar";
 import { logger } from "./logger";
 
@@ -13,6 +13,13 @@ const config = new Configuration({
 });
 
 const client = new NeynarAPIClient(config);
+
+export async function fetchUser(fid: number): Promise<User | undefined> {
+  logger.info(`[Neynar] Fetching user info for ${fid}...`);
+
+  const response = await client.fetchBulkUsers({ fids: [fid] });
+  return response.users[0];
+}
 
 export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
   logger.info(`[Neynar] Fetching user followers for ${fid}...`);

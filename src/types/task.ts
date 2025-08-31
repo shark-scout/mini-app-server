@@ -6,6 +6,7 @@ export enum TaskStatus {
 }
 
 export enum TaskProcessingStage {
+  FETCHING_USER = "fetching_user",
   FETCHING_FOLLOWERS = "fetching_followers",
   CREATING_BALANCES = "creating_balances",
   SENDING_NOTIFICATION = "sending_notification",
@@ -13,6 +14,7 @@ export enum TaskProcessingStage {
 }
 
 export type TaskResult = {
+  user: boolean;
   followers: number;
   filteredFollowers: number;
   addresses: number;
