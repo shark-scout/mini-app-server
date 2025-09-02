@@ -37,7 +37,6 @@ export async function createBalances(
     const balance: Balance = {
       createdAt: new Date(),
       address: address,
-      alchemyTokens: alchemyTokens,
       alchemyTokensUsdValue: getTokensUsdValue(alchemyTokens),
     };
     await insertBalance(balance);
