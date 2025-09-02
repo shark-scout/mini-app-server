@@ -18,7 +18,7 @@ export async function findTasks(args?: {
       ...(args?.fid !== undefined && { fid: args.fid }),
       ...(args?.statuses !== undefined && { status: { $in: args.statuses } }),
     })
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .toArray();
   return tasks;
 }
