@@ -3,8 +3,8 @@ import { Follower, User } from "@neynar/nodejs-sdk/build/api";
 import { neynarConfig } from "../config/neynar";
 import { logger } from "./logger";
 
-const config = new Configuration({
-  apiKey: process.env.NEYNAR_API_KEY as string,
+const configPrimary = new Configuration({
+  apiKey: process.env.NEYNAR_API_KEY_PRIMARY as string,
   baseOptions: {
     headers: {
       "x-neynar-experimental": neynarConfig.experimental,
@@ -12,17 +12,27 @@ const config = new Configuration({
   },
 });
 
-const client = new NeynarAPIClient(config);
+const configSecondary = new Configuration({
+  apiKey: process.env.NEYNAR_API_KEY_SECONDARY as string,
+  baseOptions: {
+    headers: {
+      "x-neynar-experimental": neynarConfig.experimental,
+    },
+  },
+});
 
 export async function fetchUser(fid: number): Promise<User | undefined> {
   logger.info(`[Neynar] Fetching user info for ${fid}...`);
 
+  const client = new NeynarAPIClient(configSecondary);
   const response = await client.fetchBulkUsers({ fids: [fid] });
   return response.users[0];
 }
 
 export async function fetchUserFollowers(fid: number): Promise<Follower[]> {
   logger.info(`[Neynar] Fetching user followers for ${fid}...`);
+
+  const client = new NeynarAPIClient(configSecondary);
 
   let totalFollowers: Follower[] = [];
   let iterationCursor: string | undefined | null = undefined;
@@ -63,6 +73,8 @@ export async function sendNotification(
   targetUrl: string
 ): Promise<string> {
   logger.info(`[Neynar] Sending notification to ${fid}...`);
+
+  const client = new NeynarAPIClient(configPrimary);
 
   const response = await client.publishFrameNotifications({
     targetFids: [fid],
