@@ -3,6 +3,7 @@ import { Follower, User } from "@neynar/nodejs-sdk/build/api";
 import { neynarConfig } from "../config/neynar";
 import { logger } from "./logger";
 
+// Primary key is used for sending notifications
 const configPrimary = new Configuration({
   apiKey: process.env.NEYNAR_API_KEY_PRIMARY as string,
   baseOptions: {
@@ -12,6 +13,7 @@ const configPrimary = new Configuration({
   },
 });
 
+// Secondary key is used for fetching user data and followers
 const configSecondary = new Configuration({
   apiKey: process.env.NEYNAR_API_KEY_SECONDARY as string,
   baseOptions: {
