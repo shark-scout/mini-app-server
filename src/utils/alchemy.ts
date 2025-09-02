@@ -23,7 +23,7 @@ function getTokenUsdValue(token: AlchemyToken): number | undefined {
   }
 
   // Skip tokens without decimal information as we can't calculate accurate balance
-  if (decimals === null || decimals === undefined) {
+  if (decimals === null || decimals === undefined || decimals === 0) {
     return undefined;
   }
 
@@ -43,6 +43,11 @@ function getTokenUsdValue(token: AlchemyToken): number | undefined {
   // Calculate USD value
   const usdPriceValue = parseFloat(usdPrice.value);
   const usdValue = actualAmount * usdPriceValue;
+
+  // Check that USD value is not too high
+  if (usdValue > alchemyConfig.maxUsdValue) {
+    return undefined;
+  }
 
   return usdValue;
 }
