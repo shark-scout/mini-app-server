@@ -18,7 +18,6 @@ export async function findBalances(args?: {
         address: { $in: args.addresses },
       }),
     })
-    .sort({ createdAt: -1 })
     .toArray();
   return balances;
 }
